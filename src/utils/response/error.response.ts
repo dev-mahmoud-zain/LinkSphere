@@ -1,0 +1,64 @@
+import { Request, Response, NextFunction } from "express"
+
+
+
+interface iError extends Error {
+    statusCode: number
+}
+
+export class ApplicationException extends Error {
+    constructor(
+        message: string,
+        public statusCode: number = 400,
+        cause?: unknown
+    ) {
+        super(message, { cause })
+        this.name = this.constructor.name
+        Error.captureStackTrace(this, this.constructor) // Safty Check 
+    }
+}
+
+export class BadRequestException extends ApplicationException {
+    constructor(
+        message: string,
+        cause?: unknown
+    ) {
+        super(message, 400, cause)
+    }
+}
+
+export class NotFoundException extends ApplicationException {
+    constructor(
+        message: string = "Not Found",
+        cause?: unknown
+    ) {
+        super(message, 404, cause)
+    }
+}
+
+
+export class TokenException extends ApplicationException {
+    constructor(
+        message: string = "Invalid or expired token",
+        statusCode: number = 401,
+        cause?: unknown
+    ) {
+        super(message, statusCode, cause);
+    }
+}
+
+
+
+
+
+export const glopalErrorHandler = (error: iError, req: Request, res: Response, next: NextFunction) => {
+
+    res.status(error.statusCode || 500).json({
+        error_message: error.message || "Something Went Wrong",
+        name: error.name,
+        statusCode: error.statusCode,
+        cause: error.cause,
+        error_stack: process.env.MOOD === "development" ? error.stack : undefined,
+    })
+
+}
