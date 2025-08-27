@@ -1,17 +1,22 @@
-import mongoose from "mongoose";
+import { connect } from "mongoose";
+import { UserModel } from "./models/user.model";
 
-const uri = process.env.DB_CONNECTIONSTRING || ""
 
- const connectToDataBase = async () => {
+const connectToDataBase = async (): Promise<void> => {
 
     try {
-        await mongoose.connect(uri)
+        await connect(process.env.DB_CONNECTION_URL as string);
+        
+        UserModel.syncIndexes();
+
         console.log("DataBase Connected Succses");
     } catch (error) {
+        console.log("\nX X X X X X X X X X X X X X X X X X X X X X X");
         console.log("Faild To Connect DataBase");
+        console.log("X X X X X X X X X X X X X X X X X X X X X X X\n");
         console.log(error)
     }
 
 }
 
-export default connectToDataBase
+export default connectToDataBase;

@@ -1,54 +1,53 @@
 import type { Request, Response } from "express"
-import type { I_ConfirmEmailInputs, I_loginBodyInputs, I_ReSendConfirmEmailIOTPInputs, I_SignupBodyInputs, IVerifyToken } from "./dto/auth.dto";
+import type { I_ConfirmEmailInputs, I_loginBodyInputs, I_ReSendConfirmEmailIOTPInputs, I_SignupBodyInputs } from "./dto/auth.dto";
+import { UserRepository } from "../../DataBase/repository/user.repository";
 import { UserModel } from "../../DataBase/models/user.model";
-import { BadRequestException, NotFoundException, TokenException } from "../../utils/response/error.response";
+import { BadRequestException, ConflictException, NotFoundException } from "../../utils/response/error.response";
 import { compareHash, generateHash } from "../../utils/security/hash.security";
 import { emailEvent } from "../../utils/email/email.events";
-import { confirmEmailTemplate } from "../../utils/email/email.template";
-import { customAlphabet } from "nanoid";
-import jwt from "jsonwebtoken";
-
+import { generateOTP } from "../../utils/security/OTP";
+import { TokenService } from "../../utils/security/token.security";
 
 
 class AuthenticationServices {
+
+    private userModel = new UserRepository(UserModel);
+    private tokenService = new TokenService;
 
     constructor() { }
 
     signup = async (req: Request, res: Response): Promise<Response> => {
 
-        let userData: I_SignupBodyInputs = req.body.validData;
+        let { userName, email, password, gender, phone }: I_SignupBodyInputs = req.body.validData;
 
-        const userExsist = await UserModel.findOne({
-            email: userData.email
+
+        const userExsist = await this.userModel.findOne({
+            filter: { email }, select: "_id userName email", options: { lean: true }
         })
-
-
-
 
         if (userExsist) {
-            throw new BadRequestException("Email Exsist")
+            throw new ConflictException("Email Alredy Exsists Try To Login", userExsist)
         }
 
-        const userPassword = await generateHash({ plainTxt: userData.password })
-        userData.password = userPassword
-        const OTPCode = customAlphabet("0123456789", 6)();
+        const OTPCode = generateOTP();
 
-        const newUser = await UserModel.create({
-            ...userData,
-            confirmEmailOTP: OTPCode,
-            confirmEmailSentTime: Date.now(),
+        await this.userModel.createUser({
+            data: [{
+                userName,
+                email,
+                password: await generateHash(password),
+                gender,
+                confirmEmailOTP: await generateHash(OTPCode),
+                confirmEmailSentTime: new Date(),
+                ...(phone ? { phone } : {})
+            }]
         })
 
-        const html = await confirmEmailTemplate(OTPCode);
-        emailEvent.emit("sentConfirmEmail", { email: userData.email, html })
+        emailEvent.emit("confirmEmail", { to: email, OTPCode })
 
         return res.status(201).json({
             message: "Done",
             info: "We Sent A Confirm OTP To Your Email , Please Confirm It To Login",
-            data: {
-                id: newUser._id,
-                email: newUser.email,
-            }
         });
 
     }
@@ -57,230 +56,153 @@ class AuthenticationServices {
 
         const { email, OTP }: I_ConfirmEmailInputs = req.body.validData;
 
-        const user = await UserModel.findOne({
-            email,
+        const user = await this.userModel.findOne({
+            filter: { email },
         })
 
         if (!user) {
-            throw new NotFoundException("User Not Found")
+            throw new NotFoundException("Email Is Not Exsist")
         }
 
-        if (user?.confirmEmail) {
-            throw new BadRequestException("Email Alredy Confirmed Before")
+        if (user.confirmedAt) {
+            throw new BadRequestException("This Email Is Already Confirmed");
         }
 
-        const sentTime = user.confirmEmailSentTime.getTime();
-        const now = Date.now();
-
-        if (now - sentTime > 2 * 60 * 1000) {
-            throw new BadRequestException("OTP Code Expired");
+        if (!user.confirmEmailSentTime || !user.confirmEmailOTP) {
+            throw new NotFoundException("OTP Not Found Or Not Sent For This Email");
         }
 
-        if (OTP !== user.confirmEmailOTP) {
-            throw new BadRequestException("Wrong OTP Number");
+        const sentAt: Date = user.confirmEmailSentTime
+        const expiresAt = new Date(sentAt.getTime() + 5 * 60 * 1000);
+        if (new Date() > expiresAt) {
+            throw new BadRequestException("OTP Code Has Expired");
         }
 
-        await UserModel.updateOne({
-            email,
+        if (! await compareHash(OTP, user.confirmEmailOTP as string)) {
+            throw new BadRequestException("Invalid OTP Number")
+        }
+
+
+        await this.userModel.updateOne({
+            email
         }, {
+            $set: {
+                confirmedAt: new Date(),
+            },
             $unset: {
                 confirmEmailOTP: true,
                 confirmEmailSentTime: true,
-                OTPReSendCount: true
+                OTPReSendCount: true,
+                otpBlockExpiresAt: true
             },
-            $set: { confirmEmail: Date.now() }
         })
 
-        return res.status(201).json({
+        return res.status(200).json({
             message: "Done",
-            info: "Email Confirmed Succses"
+            info: "Email Confirmed Succses",
         });
 
     }
 
-    reSendConfirmEmailOTP = async (req: Request, res: Response): Promise<Response> => {
+    reSendConfirmOTP = async (req: Request, res: Response): Promise<Response> => {
 
         const { email }: I_ReSendConfirmEmailIOTPInputs = req.body.validData;
 
-        const user = await UserModel.findOne({
-            email,
+        let user = await this.userModel.findOne({
+            filter: { email },
         })
 
+        // الأكونت مش موجود يا بلدينا
         if (!user) {
             throw new NotFoundException("User Not Found")
         }
 
-        if (user?.confirmEmail) {
-            throw new BadRequestException("Email Alredy Confirmed Before")
+        // جاي تأكتف أكونت أوريدي متأكتف !! طب اقنعني ازاي
+        if (user.confirmedAt) {
+            throw new BadRequestException("This Account Already Confirmed Before");
         }
 
-        const blockDuration = 5 * 60 * 1000;
-        const now = Date.now();
-        const blockEndTime = user.OTPReSendBlockTime?.getTime() + blockDuration;
-
-
-        // واخد بلوك لمدة 5 دقايق 
-        if (user.OTPReSendBlockTime && now < blockEndTime) {
-            const remainingMs = blockEndTime - now;
-            const remainingMinutes = Math.ceil(remainingMs / 60000);
-
-            throw new BadRequestException(
-                `Wait ${remainingMinutes} Minutes Before Requesting A New OTP`
-            );
-        }
-
-        const OTPCode = customAlphabet("0123456789", 6)();
-
-        // كده وقت البلوك خلص
-        if (user.OTPReSendBlockTime && now >= blockEndTime) {
-            await UserModel.updateOne({
-                email
-            }, {
-                confirmEmailSentTime: Date.now(),
-                confirmEmailOTP: OTPCode,
-                $inc: {
-                    __v: 1,
-                },
-                $set: { OTPReSendCount: 1 },
-                $unset: { OTPReSendBlockTime: true }
+        //  لسة مش واخد بلوك بس وصل الحد الاقصى
+        if (!user.otpBlockExpiresAt && user.OTPReSendCount === 5) {
+            await this.userModel.updateOne({ email }, {
+                otpBlockExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+                OTPReSendCount: user.OTPReSendCount
             })
-
-            return res.status(201).json({
-                message: "Done",
-                info: "New OTP Sent Succses"
-            });
-
+            throw new BadRequestException("Max 5 Attempts Reached. Try Again In 10 Minutes.");
         }
 
-        // هنديله بلوك عشان حاول 5 مرات
-        if (user.OTPReSendCount >= 5 && !user.OTPReSendBlockTime) {
+        // واخد بلوك
+        if (user.otpBlockExpiresAt) {
 
-            await UserModel.findOneAndUpdate({
-                email
-            }, {
-                OTPReSendBlockTime: Date.now(),
-                $inc: {
-                    __v: 1,
-                }
-            })
-
-            throw new BadRequestException("You Tried 5 Times, Wait 5 Minutes Before Requesting A New OTP");
-
-        }
-
-
-        // مفيش بلوك و المحاولات أقل من 5
-
-        await UserModel.findOneAndUpdate({
-            email
-        }, {
-            confirmEmailSentTime: Date.now(),
-            confirmEmailOTP: OTPCode,
-            $inc: {
-                __v: 1,
-                OTPReSendCount: 1
+            // لسة واخد بلوك
+            if (user.otpBlockExpiresAt > new Date()) {
+                throw new BadRequestException("Maximum attempts reached. Please try again later.");
             }
+
+            // نفك البلوك عشان الوقت خلص
+            else {
+                user = await this.userModel.updateOne({ email }, {
+                    $unset: { otpBlockExpiresAt: 1 },
+                    OTPReSendCount: 0
+                })
+            }
+        }
+
+        const OTPCode: string = generateOTP();
+        await this.userModel.updateOne({ email }, {
+            OTPReSendCount: user.OTPReSendCount ? user.OTPReSendCount + 1 : 1,
+            confirmEmailOTP: await generateHash(OTPCode),
+            confirmEmailSentTime: new Date()
         })
 
-        const html = await confirmEmailTemplate(OTPCode);
-        emailEvent.emit("sentConfirmEmail", { email, html })
+        emailEvent.emit("confirmEmail", { to: email, OTPCode });
 
-        return res.status(201).json({
+        return res.status(200).json({
             message: "Done",
-            info: "New OTP Sent Succses"
+            info: "Email Confirmed Succses",
         });
-
     }
 
     login = async (req: Request, res: Response): Promise<Response> => {
 
-
         const { email, password }: I_loginBodyInputs = req.body.validData;
 
-
-        const user = await UserModel.findOne({
-            email,
-        }, "email password role")
+        const user = await this.userModel.findOne({
+            filter: {
+                email
+            },
+            select: { email: 1, password: 1, confirmedAt: 1, role: 1 }
+        })
 
         if (!user) {
-            throw new NotFoundException("User Not Found Try To Login");
+            throw new NotFoundException("User Not Found Try To Signup");
         }
 
-        const comparePassword = await compareHash({ plainTxt: password, hashValue: user.password });
-
-        if (!comparePassword) {
-            throw new BadRequestException("Invalid Email Or Password")
+        if (!user.confirmedAt) {
+            throw new BadRequestException("Confirm Your Email To Login")
         }
 
-        const access_token = jwt.sign(
-            { id: user._id, role: user.role },
-            user?.role === "user" ? process.env.ACCESS_USER_TOKEN_SIGNATURE as string
-                : process.env.ACCESS_SYSTEM_TOKEN_SIGNATURE as string,
-            { expiresIn: "1h" }
-        )
+        const compare: boolean = await compareHash(password, user.password);
+        console.log(compare)
 
-        const refresh_token = jwt.sign(
-            { id: user._id, role: user.role },
-            user?.role === "user" ? process.env.REFRESH_USER_TOKEN_SIGNATURE as string
-                : process.env.REFRESH_SYSTEM_TOKEN_SIGNATURE as string,
-            { expiresIn: "1y" }
-        )
+        if (!compare) {
+            throw new BadRequestException("Invalid Email Or Password");
+        }
+
+        const accses_token = await this.tokenService.generateAccsesToken({ payload: { _id: user._id, role: user.role } })
+        const refresh_token = await this.tokenService.generateRefreshToken({ payload: { _id: user._id, role: user.role } })
 
         return res.status(200).json({
             message: "Done",
-            info: "Signup Succses",
-            data: { access_token, refresh_token }
-        });
-    }
-
-    verifyToken = async (req: Request, res: Response): Promise<Response> => {
-
-        const { token, tokenType }: IVerifyToken = req.body.validData;
-        const role = token.split(" ")[0];
-        const userToken = token.split(" ")[1];
-
-
-        try {
-
-            if (role === "Bearer") {
-                if (tokenType == "access_token") {
-                    jwt.verify(userToken!, process.env.ACCESS_USER_TOKEN_SIGNATURE!)
-
-                }
-
-                else {
-                    jwt.verify(userToken!, process.env.REFRESH_USER_TOKEN_SIGNATURE!)
-                }
+            info: "Login Succses",
+            data: {
+                accses_token,
+                refresh_token
             }
-
-
-            else {
-
-                if (tokenType == "access_token") {
-                    jwt.verify(userToken!, process.env.ACCESS_SYSTEM_TOKEN_SIGNATURE!)
-                }
-
-                else {
-                    jwt.verify(userToken!, process.env.REFRESH_SYSTEM_TOKEN_SIGNATURE!)
-                }
-
-            }
-
-        } catch (error: any) {
-
-            throw new TokenException();
-
-        }
-
-
-        return res.status(200).json({
-            message: "Done",
-            info: "Token Is Correct",
         });
 
-        
     }
 
 }
 
-export default new AuthenticationServices()
+export default new AuthenticationServices();

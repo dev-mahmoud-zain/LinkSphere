@@ -1,30 +1,32 @@
-import nodemailer from "nodemailer";
+import { createTransport, Transporter } from "nodemailer";
+import Mail from "nodemailer/lib/mailer";
+import SMTPTransport from "nodemailer/lib/smtp-transport";
+import { BadRequestException } from "../response/error.response";
 
-export const sendEmail = async ({
-    from = `"LinkSphere" <${process.env.APP_EMAIL}>`,
-    to = "",
-    cc = [],
-    bcc = [],
-    subject = "",
-    text = "",
-    html = "",
-    attachments = []
-} = {}) => {
 
-    const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            user: process.env.APP_EMAIL,
-            pass: process.env.APP_PASSWORD,
-        },
-    });
+export const sendEmail = async (data: Mail.Options): Promise<void> => {
+
+
+    if (!data.html && data.attachments?.length && !data.text) {
+        throw new BadRequestException("Missing Email Content!!");
+    }
+
+
+    const transporter:
+        Transporter<SMTPTransport.SentMessageInfo, SMTPTransport.Options>
+        = createTransport({
+            service: "gmail",
+            auth: {
+                user: process.env.APP_EMAIL as string,
+                pass: process.env.APP_PASSWORD as string,
+            }
+        })
+
 
     const info = await transporter.sendMail({
-        from,
-        to,
-        subject,
-        text,
-        html,
-        attachments
+        ...data,
+        from: `"${process.env.APPLCATION_NAME}" <${process.env.APP_EMAIL}>`,
     });
+
+
 }

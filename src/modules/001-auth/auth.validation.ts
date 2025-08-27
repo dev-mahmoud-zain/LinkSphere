@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { generalFields } from "../../middlewares/validation.middleware";
+import { GenderEnum } from "../../DataBase/models/user.model";
 
 
 export const login = {
@@ -15,7 +16,7 @@ export const signup = {
         userName: generalFields.userName,
         confirmPassword: z.string(),
         phone: generalFields.phone.optional(),
-        gender: z.enum(["male", "female"]).default("male")
+        gender: z.enum(GenderEnum).default(GenderEnum.male)
     }).superRefine((data, ctx) => {
         if (data.password !== data.confirmPassword) {
             ctx.addIssue({
@@ -35,18 +36,17 @@ export const signup = {
 
 }
 
-export const reSendConfirmEmailOTP = {
+export const reSendConfirmOTP = {
     body: z.strictObject({
         email: generalFields.email,
     })
 }
 
 export const confirmEmail = {
-    body: reSendConfirmEmailOTP.body.extend({
+    body: reSendConfirmOTP.body.extend({
         OTP: generalFields.OTP
     })
 }
-
 
 export const verifyToken = {
     body: z.object({

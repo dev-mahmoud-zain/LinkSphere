@@ -22,9 +22,7 @@ import connectToDataBase from "./DataBase/DB_Connection";
 
 
 // App Start Point
-export default function bootstrap() {
-
-
+export default async function bootstrap() :Promise<void> {
 
     const app = express();
     const port: Number | String = process.env.PORT || 5000;
@@ -46,7 +44,7 @@ export default function bootstrap() {
     app.use(express.json());
 
     // DataBase
-    connectToDataBase();
+   await connectToDataBase();
 
     // AppLcation Routing 
 

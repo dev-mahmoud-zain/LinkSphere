@@ -27,6 +27,15 @@ export class BadRequestException extends ApplicationException {
     }
 }
 
+export class ConflictException extends ApplicationException {
+    constructor(
+        message: string,
+        cause?: unknown
+    ) {
+        super(message, 409, cause)
+    }
+}
+
 export class NotFoundException extends ApplicationException {
     constructor(
         message: string = "Not Found",

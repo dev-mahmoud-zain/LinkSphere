@@ -1,40 +1,74 @@
-import { Schema, model, Document } from "mongoose";
+import { Schema, models, model, Document } from "mongoose";
 
-interface IUser extends Document {
-    userName: string;
+export enum GenderEnum {
+    male = "male",
+    female = "female"
+}
+export enum RoleEnum {
+    user = "user",
+    admin = "admin"
+}
 
+export interface IUser extends Document {
+    _id: Schema.Types.ObjectId;
+    firstName: string;
+    lastName: string;
+    userName?: string;
     email: string;
-    confirmEmail: Date,
-
-    confirmEmailOTP: string,
-    confirmEmailSentTime: Date,
-
-    OTPReSendCount: number,
-    OTPReSendBlockTime: Date,
-
+    confirmedAt: Date;
+    confirmEmailOTP?: string;
+    confirmEmailSentTime?: Date;
+    OTPReSendCount: number;
+    otpBlockExpiresAt: Date;
     password: string,
-    phone: string,
-    gender: "male" | "female";
-
-    role: "user" | "admin";
+    reSetPasswordOTP: string;
+    changeCredentialsTime?: Date;
+    phone?: string;
+    adress?: string;
+    gender: GenderEnum;
+    role: RoleEnum;
+    createdAt: Date;
+    updatedAt?: Date;
 }
 
 const userSchema = new Schema<IUser>({
-    userName: { type: String, required: true },
+
+    firstName: { type: String, required: true, min: 3, max: 25 },
+    lastName: { type: String, required: true, min: 3, max: 25 },
+
     email: { type: String, required: true, unique: true },
-
-    confirmEmail: { type: Date },
+    confirmedAt: { type: Date },
     confirmEmailOTP: { type: String },
-
     confirmEmailSentTime: { type: Date },
     OTPReSendCount: { type: Number },
-    OTPReSendBlockTime: { type: Date },
+    otpBlockExpiresAt: { type: Date },
 
     password: { type: String, required: true },
-    phone: { type: String, required: false },
-    gender: { type: String, enum: ["male", "female"], default: "male" },
+    reSetPasswordOTP: { type: String },
+    changeCredentialsTime: { type: Date },
 
-    role: { type: String, enum: ["user", "admin"], default: "user" }
-});
+    phone: { type: String },
+    adress: { type: String },
+    gender: { type: String, enum: GenderEnum, default: GenderEnum.male },
+    role: { type: String, enum: RoleEnum, default: RoleEnum.user },
 
-export const UserModel = model<IUser>("User", userSchema);
+    createdAt: { type: Date },
+    updatedAt: { type: Date },
+},
+    {
+        timestamps: true,
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true }
+    }
+);
+
+
+userSchema.virtual("userName").set(function (value: String) {
+    const [firstName, lastName] = value.split(" ") || [];
+    this.set({ firstName, lastName });
+}).get(function () {
+    return this.firstName + " " + this.lastName;
+})
+
+export const UserModel = models.User || model<IUser>("User", userSchema);
+
