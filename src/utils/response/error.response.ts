@@ -45,10 +45,9 @@ export class NotFoundException extends ApplicationException {
     }
 }
 
-
-export class TokenException extends ApplicationException {
+export class InvalidTokenException extends ApplicationException {
     constructor(
-        message: string = "Invalid or expired token",
+        message: string = "The token is invalid or has expired",
         statusCode: number = 401,
         cause?: unknown
     ) {
@@ -56,9 +55,25 @@ export class TokenException extends ApplicationException {
     }
 }
 
+export class UnAuthorizedException extends ApplicationException {
+    constructor(
+        message: string = "You are not authorized. Please login to continue.",
+        statusCode: number = 401,
+        cause?: unknown
+    ) {
+        super(message, statusCode, cause);
+    }
+}
 
-
-
+export class ForbiddenException extends ApplicationException {
+    constructor(
+        message: string =  "You dont have permission to perform this action",
+        statusCode: number = 403,
+        cause?: unknown
+    ) {
+        super(message, statusCode, cause);
+    }
+}
 
 export const glopalErrorHandler = (error: iError, req: Request, res: Response, next: NextFunction) => {
 

@@ -1,13 +1,14 @@
 import type { Request, Response } from "express"
-import type { I_ConfirmEmailInputs, I_loginBodyInputs, I_ReSendConfirmEmailIOTPInputs, I_SignupBodyInputs } from "./dto/auth.dto";
+import type { I_ConfirmEmailInputs, I_loginBodyInputs, I_ReSendConfirmEmailIOTPInputs, I_SignupBodyInputs, ILogout, ISignupWithGmail } from "./dto/auth.dto";
 import { UserRepository } from "../../DataBase/repository/user.repository";
-import { UserModel } from "../../DataBase/models/user.model";
+import { HUserDoucment, ProviderEnum, UserModel } from "../../DataBase/models/user.model";
 import { BadRequestException, ConflictException, NotFoundException } from "../../utils/response/error.response";
 import { compareHash, generateHash } from "../../utils/security/hash.security";
 import { emailEvent } from "../../utils/email/email.events";
 import { generateOTP } from "../../utils/security/OTP";
-import { TokenService } from "../../utils/security/token.security";
-
+import { LogoutFlagEnum, TokenService } from "../../utils/security/token.security";
+import { JwtPayload } from "jsonwebtoken";
+import { OAuth2Client, TokenPayload } from "google-auth-library";
 
 class AuthenticationServices {
 
@@ -15,6 +16,26 @@ class AuthenticationServices {
     private tokenService = new TokenService;
 
     constructor() { }
+
+
+    private verifyGmailAccount = async (idToken: string): Promise<TokenPayload> => {
+
+        const client = new OAuth2Client();
+        const ticket = await client.verifyIdToken({
+            idToken,
+            audience: process.env.WEB_CLIENT_ID as string,
+        });
+
+        const payload = ticket.getPayload();
+
+        if (!payload?.email_verified) {
+            throw new BadRequestException("Fail To Verify This Account")
+        }
+
+        return payload;
+
+    }
+
 
     signup = async (req: Request, res: Response): Promise<Response> => {
 
@@ -163,6 +184,80 @@ class AuthenticationServices {
         });
     }
 
+    loginWithGmail = async (req: Request, res: Response): Promise<Response> => {
+
+        const { idToken }: ISignupWithGmail = req.body.validData
+
+        const { email }: TokenPayload = await this.verifyGmailAccount(idToken)
+
+        const user = await this.userModel.findOne({
+            filter: {
+                email,
+                provider: ProviderEnum.google
+            }
+        })
+
+        if (!user) {
+            throw new NotFoundException("Not Registerd Account Or Registerd With Another Provider");
+        }
+
+
+        const credentials = await this.tokenService.createLoginCredentials(user)
+
+
+        return res.status(200).json({
+            message: "Done",
+            info: "login Succses",
+            data: { credentials }
+        });
+
+
+    }
+
+    signupWithGmail = async (req: Request, res: Response): Promise<Response> => {
+
+        const { idToken }: ISignupWithGmail = req.body.validData
+
+        const { email, name, picture }: TokenPayload = await this.verifyGmailAccount(idToken)
+
+        const user = await this.userModel.findOne({
+            filter: {
+                email
+            }
+        })
+
+        if (user) {
+            if (user.provider === ProviderEnum.system) {
+                return await this.loginWithGmail(req, res)
+            }
+            throw new ConflictException("Invalid Provider , User Provider: " + user.provider);
+        }
+
+        const [newUser] = await this.userModel.create({
+            data: [{
+                userName: name as string,
+                email: email as string,
+                picture: picture as string,
+                confirmedAt: new Date()
+            }]
+        }) || [];
+
+
+        if (!newUser) {
+            throw new BadRequestException("Fail To Signup")
+        }
+
+        const credentials = await this.tokenService.createLoginCredentials(newUser)
+
+        return res.status(200).json({
+            message: "Done",
+            info: "Signup Succses",
+            data:{credentials}
+        });
+
+    }
+
+
     login = async (req: Request, res: Response): Promise<Response> => {
 
         const { email, password }: I_loginBodyInputs = req.body.validData;
@@ -183,22 +278,60 @@ class AuthenticationServices {
         }
 
         const compare: boolean = await compareHash(password, user.password);
-        console.log(compare)
 
         if (!compare) {
             throw new BadRequestException("Invalid Email Or Password");
         }
 
-        const accses_token = await this.tokenService.generateAccsesToken({ payload: { _id: user._id, role: user.role } })
-        const refresh_token = await this.tokenService.generateRefreshToken({ payload: { _id: user._id, role: user.role } })
+        const credentials = await this.tokenService.createLoginCredentials(user);
 
         return res.status(200).json({
             message: "Done",
             info: "Login Succses",
             data: {
-                accses_token,
-                refresh_token
+                credentials
             }
+        });
+
+    }
+
+    logout = async (req: Request, res: Response): Promise<Response> => {
+
+        const { logoutFlag }: ILogout = req.body.validData;
+
+
+        if (logoutFlag === LogoutFlagEnum.all) {
+
+            await this.userModel.updateOne({
+                _id: req.user?._id
+            },
+                {
+                    changeCredentialsTime: new Date()
+                })
+
+        }
+
+        else {
+            await this.tokenService.createRevokeToken(req.tokenDecoded as JwtPayload);
+        }
+
+        return res.status(200).json({
+            message: "Done",
+            info: "Logout Succses",
+        });
+
+    }
+
+
+    refreshToken = async (req: Request, res: Response): Promise<Response> => {
+
+        const credentials = await this.tokenService.createLoginCredentials(req.user as HUserDoucment)
+
+        await this.tokenService.createRevokeToken(req.tokenDecoded as JwtPayload);
+
+        return res.status(200).json({
+            message: "Done",
+            data: credentials
         });
 
     }

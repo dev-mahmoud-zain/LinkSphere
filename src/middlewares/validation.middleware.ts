@@ -13,6 +13,7 @@ type validationErrorsType = Array<{
     }>;
 }>
 
+
 export const validationMiddleware = (schima: SchimaType) => {
     return (req: Request, res: Response, next: NextFunction): NextFunction => {
 
@@ -38,7 +39,9 @@ export const validationMiddleware = (schima: SchimaType) => {
 
             }
 
-            req[key].validData = validationResult.data
+            if (validationResult.data) {
+                req[key].validData = validationResult.data
+            }
 
         }
 

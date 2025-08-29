@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { generalFields } from "../../middlewares/validation.middleware";
 import { GenderEnum } from "../../DataBase/models/user.model";
+import { LogoutFlagEnum, TokenTypeEnum } from "../../utils/security/token.security";
 
 
 export const login = {
@@ -50,7 +51,19 @@ export const confirmEmail = {
 
 export const verifyToken = {
     body: z.object({
-        tokenType: z.enum(["access_token","refresh_token"]),
+        tokenType: z.enum(TokenTypeEnum).default(TokenTypeEnum.accses),
         token: generalFields.token
+    })
+}
+
+export const logout = {
+    body: z.object({
+        logoutFlag: z.enum(LogoutFlagEnum).default(LogoutFlagEnum.current),
+    })
+}
+
+export const signupWithGmail = {
+    body: z.object({
+        idToken: z.string()
     })
 }

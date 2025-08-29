@@ -16,6 +16,7 @@ config({ path: resolve("./config/.env.development") })
 import authRouter from "./modules/001-auth/auth.controller";
 import { glopalErrorHandler } from "./utils/response/error.response";
 import connectToDataBase from "./DataBase/DB_Connection";
+import usersRouter from "./modules/002-users/users.controller";
 
 
 
@@ -59,6 +60,9 @@ export default async function bootstrap() :Promise<void> {
 
     // Authentacition Router
     app.use("/auth", authRouter);
+
+
+    app.use("/users", usersRouter);
 
     // Glopal Error Handler
 

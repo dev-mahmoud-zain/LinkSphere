@@ -1,4 +1,4 @@
-import { Schema, models, model, Document } from "mongoose";
+import { Schema, models, model, Document, HydratedDocument } from "mongoose";
 
 export enum GenderEnum {
     male = "male",
@@ -7,6 +7,10 @@ export enum GenderEnum {
 export enum RoleEnum {
     user = "user",
     admin = "admin"
+}
+export enum ProviderEnum {
+    system = "system",
+    google = "google"
 }
 
 export interface IUser extends Document {
@@ -29,10 +33,12 @@ export interface IUser extends Document {
     role: RoleEnum;
     createdAt: Date;
     updatedAt?: Date;
+    provider: string;
+    picture?: string;
+    coverImages?: string[]
 }
 
 const userSchema = new Schema<IUser>({
-
     firstName: { type: String, required: true, min: 3, max: 25 },
     lastName: { type: String, required: true, min: 3, max: 25 },
 
@@ -43,7 +49,12 @@ const userSchema = new Schema<IUser>({
     OTPReSendCount: { type: Number },
     otpBlockExpiresAt: { type: Date },
 
-    password: { type: String, required: true },
+    password: {
+        type: String, required: function () {
+            return this.provider === ProviderEnum.system ? true : false
+        }
+    },
+
     reSetPasswordOTP: { type: String },
     changeCredentialsTime: { type: Date },
 
@@ -54,6 +65,11 @@ const userSchema = new Schema<IUser>({
 
     createdAt: { type: Date },
     updatedAt: { type: Date },
+    provider: { type: String, enum: ProviderEnum, default: ProviderEnum.system },
+
+    picture: { type: String },
+    coverImages: { type: [String] }
+
 },
     {
         timestamps: true,
@@ -72,3 +88,4 @@ userSchema.virtual("userName").set(function (value: String) {
 
 export const UserModel = models.User || model<IUser>("User", userSchema);
 
+export type HUserDoucment = HydratedDocument<IUser>;
