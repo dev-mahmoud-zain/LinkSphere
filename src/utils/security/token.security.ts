@@ -163,7 +163,7 @@ export class TokenService {
             filter: {
                 _id: decoded._id,
                 confirmedAt: { $exists: true }
-            }, select: "-password "
+            }
         })
 
         if (!user) {

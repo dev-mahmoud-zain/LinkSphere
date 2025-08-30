@@ -5,6 +5,7 @@ import type {
     I_ReSendConfirmEmailIOTPInputs,
     I_SignupBodyInputs,
     IChangeForgetPassword,
+    IChangePassword,
     IForgetPassword,
     ILogout,
     IResendForgetPasswordOTP,
@@ -42,6 +43,8 @@ class AuthenticationServices {
         }
         return payload;
     }
+
+
     signup = async (req: Request, res: Response): Promise<Response> => {
 
         let { userName, email, password, gender, phone }: I_SignupBodyInputs = req.body.validData;
@@ -338,6 +341,36 @@ class AuthenticationServices {
 
     }
 
+
+    changePassword = async (req: Request, res: Response): Promise<Response> => {
+
+
+        const { _id, email, password } = req.user as HUserDoucment;
+        const { oldPassword, newPassword }: IChangePassword = req.body
+
+
+        if (!await compareHash(oldPassword, password)) {
+            throw new BadRequestException("Invalid Old Password")
+        }
+
+        const OTPCode = generateOTP();
+        emailEvent.emit("changePassword", { to: email, OTPCode })
+
+
+        await this.userModel.updateOne({
+            _id
+        },{
+            password: await generateHash(newPassword)
+        })
+
+        return res.status(200).json({
+            message: "Done",
+            info: "Your Password Changed Succses"
+        });
+
+    }
+
+
     frogetPassword = async (req: Request, res: Response): Promise<Response> => {
 
         const { email }: IForgetPassword = req.body.validData;
@@ -364,7 +397,7 @@ class AuthenticationServices {
         const OTPCode = generateOTP();
         await this.userModel.updateOne({ email }, {
             forgetPasswordOTP: await generateHash(OTPCode),
-            forgetPasswordOTPExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+            forgetPasswordOTPExpiresAt: new Date(Date.now() + 5 * 60 * 1000),
             forgetPasswordCount: user.forgetPasswordCount ? user.forgetPasswordCount + 1 : 1
         })
 
@@ -453,6 +486,7 @@ class AuthenticationServices {
 
     }
 
+    // Middleware
     confirmForgetPasswordOTP = () => {
         return async (req: Request, res: Response, next: NextFunction) => {
 

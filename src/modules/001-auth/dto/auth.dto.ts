@@ -11,12 +11,15 @@ export type I_ReSendConfirmEmailIOTPInputs = z.infer<typeof validators.reSendCon
 
 export type IVerifyToken = z.infer<typeof validators.verifyToken.body>
 
-export type ILogout= z.infer<typeof validators.logout.body>
+export type ILogout = z.infer<typeof validators.logout.body>
 
-export type ISignupWithGmail= z.infer<typeof validators.signupWithGmail.body>
+export type ISignupWithGmail = z.infer<typeof validators.signupWithGmail.body>
 
-export type IForgetPassword= z.infer<typeof validators.frogetPassword.body>
+export type IChangePassword = z.infer<typeof validators.changePassword.body>
 
-export type IResendForgetPasswordOTP= z.infer<typeof validators.frogetPassword.body>
+export type IForgetPassword = z.infer<typeof validators.frogetPassword.body>
 
-export type IChangeForgetPassword= z.infer<typeof validators.changeForgetPassword.body>
+export type IResendForgetPasswordOTP = z.infer<typeof validators.frogetPassword.body>
+
+export type IChangeForgetPassword = z.infer<typeof validators.changeForgetPassword.body>
+

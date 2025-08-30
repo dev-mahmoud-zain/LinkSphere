@@ -41,6 +41,12 @@ authRouter.get("/refresh-token",
     AuthenticationServices.refreshToken);
 
 
+authRouter.patch("/change-password",
+    authenticationMiddeware(),
+    validationMiddleware(authValidators.changePassword),
+    AuthenticationServices.changePassword);
+
+
 authRouter.post("/forget-password",
     validationMiddleware(authValidators.frogetPassword),
     AuthenticationServices.frogetPassword);

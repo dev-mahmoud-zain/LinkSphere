@@ -68,3 +68,30 @@ export const forgetPasswordTemplate = async ({ OTPCode }: { OTPCode: string }): 
 
   `;
 };
+
+
+export const passwordChangedTemplate = async (): Promise<string> => {
+  return `
+<div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; background-color: #f9fafc; color: #333; max-width: 600px; margin: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
+    
+    <h2 style="color: #2ecc71; margin-bottom: 10px;">🔐 Password Changed Successfully</h2>
+    
+    <p style="font-size: 16px; line-height: 1.6; margin: 0 0 15px;">
+        Your password for <strong style="color:#4a90e2;">LinkSphere</strong> has been updated successfully.
+    </p>
+    
+    <p style="font-size: 15px; line-height: 1.6; margin: 0 0 20px; color: #555;">
+        If this action was not made by you, please reset your password immediately or contact our support team.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+
+    <p style="font-size: 13px; color: #888; margin: 0;">
+        Thanks,<br>
+        <strong style="color:#4a90e2;">LinkSphere</strong><br>
+        <span style="font-size: 12px; color:#aaa;">Developer: Adham Zain</span>
+    </p>
+</div>
+  `;
+};
+
