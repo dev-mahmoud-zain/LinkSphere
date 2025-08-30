@@ -1,5 +1,15 @@
 import type { NextFunction, Request, Response } from "express"
-import type { I_ConfirmEmailInputs, I_loginBodyInputs, I_ReSendConfirmEmailIOTPInputs, I_SignupBodyInputs, IChangeForgetPassword, IConfirmForgetPasswordOTP, IForgetPassword, ILogout, IResendForgetPasswordOTP, ISignupWithGmail } from "./dto/auth.dto";
+import type {
+    I_ConfirmEmailInputs,
+    I_loginBodyInputs,
+    I_ReSendConfirmEmailIOTPInputs,
+    I_SignupBodyInputs,
+    IChangeForgetPassword,
+    IForgetPassword,
+    ILogout,
+    IResendForgetPasswordOTP,
+    ISignupWithGmail
+} from "./dto/auth.dto";
 import { UserRepository } from "../../DataBase/repository/user.repository";
 import { HUserDoucment, ProviderEnum, UserModel } from "../../DataBase/models/user.model";
 import { ApplicationException, BadRequestException, ConflictException, NotFoundException } from "../../utils/response/error.response";
@@ -446,7 +456,7 @@ class AuthenticationServices {
     confirmForgetPasswordOTP = () => {
         return async (req: Request, res: Response, next: NextFunction) => {
 
-            const { email, OTP }: IConfirmForgetPasswordOTP = req.body.validData;
+            const { email, OTP }: IChangeForgetPassword = req.body.validData;
 
             const user = await this.userModel.findOne({
                 filter: { email }
