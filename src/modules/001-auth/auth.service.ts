@@ -1,14 +1,15 @@
-import type { Request, Response } from "express"
-import type { I_ConfirmEmailInputs, I_loginBodyInputs, I_ReSendConfirmEmailIOTPInputs, I_SignupBodyInputs, ILogout, ISignupWithGmail } from "./dto/auth.dto";
+import type { NextFunction, Request, Response } from "express"
+import type { I_ConfirmEmailInputs, I_loginBodyInputs, I_ReSendConfirmEmailIOTPInputs, I_SignupBodyInputs, IChangeForgetPassword, IConfirmForgetPasswordOTP, IForgetPassword, ILogout, IResendForgetPasswordOTP, ISignupWithGmail } from "./dto/auth.dto";
 import { UserRepository } from "../../DataBase/repository/user.repository";
 import { HUserDoucment, ProviderEnum, UserModel } from "../../DataBase/models/user.model";
-import { BadRequestException, ConflictException, NotFoundException } from "../../utils/response/error.response";
+import { ApplicationException, BadRequestException, ConflictException, NotFoundException } from "../../utils/response/error.response";
 import { compareHash, generateHash } from "../../utils/security/hash.security";
 import { emailEvent } from "../../utils/email/email.events";
 import { generateOTP } from "../../utils/security/OTP";
 import { LogoutFlagEnum, TokenService } from "../../utils/security/token.security";
 import { JwtPayload } from "jsonwebtoken";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
+import { UpdateQuery } from "mongoose";
 
 class AuthenticationServices {
 
@@ -25,18 +26,12 @@ class AuthenticationServices {
             idToken,
             audience: process.env.WEB_CLIENT_ID as string,
         });
-
         const payload = ticket.getPayload();
-
         if (!payload?.email_verified) {
             throw new BadRequestException("Fail To Verify This Account")
         }
-
         return payload;
-
     }
-
-
     signup = async (req: Request, res: Response): Promise<Response> => {
 
         let { userName, email, password, gender, phone }: I_SignupBodyInputs = req.body.validData;
@@ -230,7 +225,7 @@ class AuthenticationServices {
             if (user.provider === ProviderEnum.system) {
                 return await this.loginWithGmail(req, res)
             }
-            throw new ConflictException("Invalid Provider , User Provider: " + user.provider);
+            throw new ConflictException("Invalid Provider", { userProvider: user.provider })
         }
 
         const [newUser] = await this.userModel.create({
@@ -252,11 +247,10 @@ class AuthenticationServices {
         return res.status(200).json({
             message: "Done",
             info: "Signup Succses",
-            data:{credentials}
+            data: { credentials }
         });
 
     }
-
 
     login = async (req: Request, res: Response): Promise<Response> => {
 
@@ -321,8 +315,6 @@ class AuthenticationServices {
         });
 
     }
-
-
     refreshToken = async (req: Request, res: Response): Promise<Response> => {
 
         const credentials = await this.tokenService.createLoginCredentials(req.user as HUserDoucment)
@@ -332,6 +324,188 @@ class AuthenticationServices {
         return res.status(200).json({
             message: "Done",
             data: credentials
+        });
+
+    }
+
+    frogetPassword = async (req: Request, res: Response): Promise<Response> => {
+
+        const { email }: IForgetPassword = req.body.validData;
+        const user = await this.userModel.findOne({
+            filter: {
+                email,
+            }
+        })
+
+        if (!user) {
+            throw new NotFoundException("User Not Exists")
+        }
+        if (user.provider === ProviderEnum.google) {
+            throw new ConflictException("Invalid Provider", { userProvider: user.provider })
+        }
+        if (!user.confirmedAt) {
+            throw new BadRequestException("Account Not Confirmed");
+        }
+
+        if (user.forgetPasswordCount) {
+            throw new BadRequestException("Use EndPoint : [Re send Forget Password OTP]");
+        }
+
+        const OTPCode = generateOTP();
+        await this.userModel.updateOne({ email }, {
+            forgetPasswordOTP: await generateHash(OTPCode),
+            forgetPasswordOTPExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+            forgetPasswordCount: user.forgetPasswordCount ? user.forgetPasswordCount + 1 : 1
+        })
+
+        emailEvent.emit("forgetPassword", { to: email, OTPCode })
+
+        return res.status(200).json({
+            message: "Done",
+            info: "Password reset code has been sent to your registered email"
+        });
+
+    }
+
+    reSendForgetPasswordOTP = async (req: Request, res: Response): Promise<Response> => {
+
+        const { email }: IResendForgetPasswordOTP = req.body.validData;
+
+        const user = await this.userModel.findOne({
+            filter: { email }
+        })
+        if (!user) {
+            throw new NotFoundException("User Not Exists")
+        }
+        if (user.provider === ProviderEnum.google) {
+            throw new ConflictException("Invalid Provider", { userProvider: user.provider })
+        }
+        if (!user.confirmedAt) {
+            throw new BadRequestException("Account Not Confirmed");
+        }
+        const OTPCode = generateOTP();
+
+        let data: UpdateQuery<HUserDoucment> = {};
+
+        // وصل الحد الأقصى بس مخدش بلوك
+        if (!user.forgetPasswordBlockExpiresAt && user.forgetPasswordCount === 4) {
+
+            // نديله بلوك ونبعتله الكود للمرة الاخيرة
+            data = {
+                forgetPasswordOTP: await generateHash(OTPCode),
+                forgetPasswordOTPExpiresAt: new Date(Date.now() + 5 * 60 * 1000),
+                forgetPasswordCount: 5,
+                forgetPasswordBlockExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+            }
+        }
+
+        // واخد بلوك
+        if (user.forgetPasswordBlockExpiresAt) {
+            // وقت البلوك خلص
+            if (user.forgetPasswordBlockExpiresAt.getTime() <= Date.now()) {
+
+                // نفك البلوك ونرجع العداد لـ 1
+
+                data = {
+                    forgetPasswordOTP: await generateHash(OTPCode),
+                    forgetPasswordOTPExpiresAt: new Date(Date.now() + 5 * 60 * 1000),
+                    forgetPasswordCount: 1,
+                    $unset: { forgetPasswordBlockExpiresAt: 1 }
+                }
+
+            }
+
+            else {
+                // لسة وقت البلوك مخلصش
+                throw new BadRequestException("Blocked For 10 Munits")
+            }
+
+        }
+
+        // لسة الدنيا تمام كمل زي ما انت
+        if (user.forgetPasswordCount && user.forgetPasswordCount < 4) {
+            data = {
+                forgetPasswordOTP: await generateHash(OTPCode),
+                forgetPasswordOTPExpiresAt: new Date(Date.now() + 5 * 60 * 1000),
+                forgetPasswordCount: user.forgetPasswordCount ? user.forgetPasswordCount + 1 : 1,
+            }
+        }
+
+        await this.userModel.updateOne({ email }, data)
+        emailEvent.emit("forgetPassword", { to: email, OTPCode })
+
+
+        return res.status(200).json({
+            message: "Done",
+            info: "A new password reset code has been sent to your registered email"
+        });
+
+
+    }
+
+    confirmForgetPasswordOTP = () => {
+        return async (req: Request, res: Response, next: NextFunction) => {
+
+            const { email, OTP }: IConfirmForgetPasswordOTP = req.body.validData;
+
+            const user = await this.userModel.findOne({
+                filter: { email }
+            })
+
+            if (!user) {
+                throw new NotFoundException("User Not Exists")
+            }
+
+            if (!user.forgetPasswordOTP) {
+                throw new BadRequestException("No OTP was requested for this account. Please request a new password reset")
+            }
+
+            if (user.forgetPasswordOTPExpiresAt && user.forgetPasswordOTPExpiresAt.getTime() < Date.now()) {
+                throw new BadRequestException("Expierd OTP")
+            }
+
+            if (!await compareHash(OTP, user.forgetPasswordOTP as string)) {
+                throw new BadRequestException("Invalid OTP Code")
+            }
+            else {
+                next();
+            }
+
+        }
+    }
+
+    changeForgetPassword = async (req: Request, res: Response): Promise<Response> => {
+
+        const { email, newPassword }: IChangeForgetPassword = req.body.validData;
+
+        const user = await this.userModel.updateOne({ email },
+            {
+                password: await generateHash(newPassword),
+                changeCredentialsTime: new Date,
+                $unset: { forgetPasswordCount: 1, forgetPasswordOTP: 1, forgetPasswordOTPExpiresAt: 1 }
+            }
+        )
+
+        if (!user) {
+            throw new ApplicationException("Something Went Wrong");
+        }
+
+        // المشكلة هنا ===>  const credentials = await this.tokenService.createLoginCredentials(user);
+
+        // فيه مشكلة هنا لما باخد الأكسس توكن اللي جاي من هنا مش بيشتغل
+        // بيجيلي   endpoint profile  حاولت أستخدمه في الـ 
+        // "error_message": "Invalid Or Old Credentials",
+        //     "name": "UnAuthorizedException",
+
+        // return res.status(200).json({
+        //     message: "Done",
+        //     data: { credentials }
+        // });
+
+
+        return res.status(200).json({
+            message: "Done",
+            info: "Password Changed Succses , Login To Continue"
         });
 
     }

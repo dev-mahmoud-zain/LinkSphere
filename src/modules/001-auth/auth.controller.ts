@@ -40,6 +40,25 @@ authRouter.get("/refresh-token",
     authenticationMiddeware(TokenTypeEnum.refresh),
     AuthenticationServices.refreshToken);
 
+
+authRouter.post("/forget-password",
+    validationMiddleware(authValidators.frogetPassword),
+    AuthenticationServices.frogetPassword);
+
+
+authRouter.post("/resend-forget-password-otp",
+    validationMiddleware(authValidators.frogetPassword),
+    AuthenticationServices.reSendForgetPasswordOTP);
+
+authRouter.post("/change-forget-password",
+    validationMiddleware(authValidators.changeForgetPassword),
+    AuthenticationServices.confirmForgetPasswordOTP(),
+    AuthenticationServices.changeForgetPassword);
+
+
+
+
+
 // authRouter.post("/verify-token",
 //     validationMiddleware(authValidators.verifyToken),
 //     AuthenticationServices.verifyToken);

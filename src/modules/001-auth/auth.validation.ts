@@ -67,3 +67,28 @@ export const signupWithGmail = {
         idToken: z.string()
     })
 }
+
+
+export const frogetPassword = {
+    body: z.object({
+        email: generalFields.email
+    })
+}
+
+
+export const changeForgetPassword = {
+    body: z.object({
+        email: generalFields.email,
+        OTP:generalFields.OTP,
+        newPassword:generalFields.password,
+        confirmNewPassword:z.string()
+    }).superRefine((data, ctx) => {
+        if (data.newPassword !== data.confirmNewPassword) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["confirmNewPassword"],
+                message: "newPassword and confirmNewPassword must be the same."
+            })
+        }
+    })
+}

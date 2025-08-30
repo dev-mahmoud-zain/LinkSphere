@@ -35,7 +35,11 @@ export interface IUser extends Document {
     updatedAt?: Date;
     provider: string;
     picture?: string;
-    coverImages?: string[]
+    coverImages?: string[],
+    forgetPasswordOTP?: string;
+    forgetPasswordOTPExpiresAt?: Date;
+    forgetPasswordCount?: number;
+    forgetPasswordBlockExpiresAt?: Date;
 }
 
 const userSchema = new Schema<IUser>({
@@ -46,7 +50,7 @@ const userSchema = new Schema<IUser>({
     confirmedAt: { type: Date },
     confirmEmailOTP: { type: String },
     confirmEmailSentTime: { type: Date },
-    OTPReSendCount: { type: Number },
+    OTPReSendCount: { type: Number, max: 5 },
     otpBlockExpiresAt: { type: Date },
 
     password: {
@@ -68,7 +72,13 @@ const userSchema = new Schema<IUser>({
     provider: { type: String, enum: ProviderEnum, default: ProviderEnum.system },
 
     picture: { type: String },
-    coverImages: { type: [String] }
+    coverImages: { type: [String] },
+
+    forgetPasswordOTP: { type: String },
+    forgetPasswordOTPExpiresAt: { type: Date },
+    forgetPasswordCount: { type: Number, min: 0, max: 5 },
+    forgetPasswordBlockExpiresAt: { type: Date },
+
 
 },
     {
