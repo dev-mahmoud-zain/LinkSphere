@@ -500,23 +500,13 @@ class AuthenticationServices {
             throw new ApplicationException("Something Went Wrong");
         }
 
-        // المشكلة هنا ===>  const credentials = await this.tokenService.createLoginCredentials(user);
-
-        // فيه مشكلة هنا لما باخد الأكسس توكن اللي جاي من هنا مش بيشتغل
-        // بيجيلي   endpoint profile  حاولت أستخدمه في الـ 
-        // "error_message": "Invalid Or Old Credentials",
-        //     "name": "UnAuthorizedException",
-
-        // return res.status(200).json({
-        //     message: "Done",
-        //     data: { credentials }
-        // });
-
+        const credentials = await this.tokenService.createLoginCredentials(user);
 
         return res.status(200).json({
             message: "Done",
-            info: "Password Changed Succses , Login To Continue"
+            data: { credentials }
         });
+
 
     }
 

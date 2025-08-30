@@ -91,14 +91,12 @@ export class TokenService {
         return jwt.sign(payload, secretKey, options)
     }
 
-
     private verifyToken = async ({
         token,
         secretKey = process.env.ACCESS_USER_TOKEN_SIGNATURE as string,
     }: IverifyToken): Promise<JwtPayload> => {
         return await jwt.verify(token, secretKey) as JwtPayload;
     }
-
 
     createLoginCredentials = async (user: HUserDoucment): Promise<{ accses_token: string, refresh_token: string }> => {
 
@@ -172,7 +170,7 @@ export class TokenService {
             throw new BadRequestException("Not Registerd Account")
         }
 
-        if ((user.changeCredentialsTime?.getTime() || 0) > decoded.iat * 1000) {
+        if ((user.changeCredentialsTime?.getTime() || 0) - 1000 > decoded.iat * 1000) {
             throw new UnAuthorizedException("Invalid Or Old Credentials");
         }
 
