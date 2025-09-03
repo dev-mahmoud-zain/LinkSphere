@@ -486,7 +486,7 @@ class AuthenticationServices {
 
     }
 
-    // Middleware
+    // Middleware 
     confirmForgetPasswordOTP = () => {
         return async (req: Request, res: Response, next: NextFunction) => {
 
