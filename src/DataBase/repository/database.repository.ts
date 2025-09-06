@@ -111,4 +111,10 @@ export abstract class DataBaseRepository<TDocument> {
         return this.model.updateMany(filter, updateData, options).exec();
     }
 
+    async deleteOne(
+         filter: FilterQuery<TDocument>
+    ){
+        return this.model.deleteOne(filter)
+    }
+
 }

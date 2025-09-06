@@ -24,7 +24,7 @@ export const fileValidation = {
 export const cloudFileUpload = (
     { storageApproach = StorageEnum.memory,
         validation = [],
-        maxFileSizeMB = 2
+        maxFileSizeMB = 6
     }:
         {
             storageApproach?: StorageEnum,

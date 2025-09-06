@@ -40,8 +40,10 @@ export interface IUser extends Document {
     forgetPasswordOTPExpiresAt?: Date;
     forgetPasswordCount?: number;
     forgetPasswordBlockExpiresAt?: Date;
-
-
+    freezedAt?: Date;
+    freezedBy?: Schema.Types.ObjectId;
+    restoredAt?: Date;
+    restoredBy?: Schema.Types.ObjectId;
 }
 
 const userSchema = new Schema<IUser>({
@@ -76,15 +78,16 @@ const userSchema = new Schema<IUser>({
     picture: { type: String },
     coverImages: { type: [String] },
 
-
-
-
     forgetPasswordOTP: { type: String },
-    forgetPasswordOTPExpiresAt:  { type: String },
+    forgetPasswordOTPExpiresAt: { type: String },
     forgetPasswordCount: { type: Number, min: 0, max: 5 },
     forgetPasswordBlockExpiresAt: { type: Date },
 
+    freezedAt: { type: Date },
+    freezedBy: { type: Schema.Types.ObjectId, ref: "User" },
 
+    restoredAt: { type: Date },
+    restoredBy: { type: Schema.Types.ObjectId, ref: "User" }
 
 },
     {

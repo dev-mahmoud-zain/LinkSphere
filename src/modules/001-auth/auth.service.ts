@@ -21,6 +21,7 @@ import { LogoutFlagEnum, TokenService } from "../../utils/security/token.securit
 import { JwtPayload } from "jsonwebtoken";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { UpdateQuery } from "mongoose";
+import { succsesResponse } from "../../utils/response/succses.response";
 
 class AuthenticationServices {
 
@@ -43,7 +44,6 @@ class AuthenticationServices {
         }
         return payload;
     }
-
 
     signup = async (req: Request, res: Response): Promise<Response> => {
 
@@ -74,10 +74,11 @@ class AuthenticationServices {
 
         emailEvent.emit("confirmEmail", { to: email, OTPCode })
 
-        return res.status(201).json({
-            message: "Done",
-            info: "We Sent A Confirm OTP To Your Email , Please Confirm It To Login",
-        });
+        return succsesResponse({
+            res,
+            statusCode: 201,
+            info: "We Sent A Confirm OTP To Your Email , Please Confirm It To Login"
+        })
 
     }
 
@@ -126,10 +127,10 @@ class AuthenticationServices {
             },
         })
 
-        return res.status(200).json({
-            message: "Done",
+        return succsesResponse({
+            res,
             info: "Email Confirmed Succses",
-        });
+        })
 
     }
 
@@ -186,10 +187,14 @@ class AuthenticationServices {
 
         emailEvent.emit("confirmEmail", { to: email, OTPCode });
 
-        return res.status(200).json({
-            message: "Done",
-            info: "Email Confirmed Succses",
-        });
+
+        return succsesResponse({
+            res,
+            statusCode: 200,
+            info: "Email Confirmed Succses"
+        })
+
+
     }
 
     loginWithGmail = async (req: Request, res: Response): Promise<Response> => {
@@ -213,11 +218,11 @@ class AuthenticationServices {
         const credentials = await this.tokenService.createLoginCredentials(user)
 
 
-        return res.status(200).json({
-            message: "Done",
+        return succsesResponse({
+            res,
             info: "login Succses",
             data: { credentials }
-        });
+        })
 
 
     }
@@ -257,11 +262,12 @@ class AuthenticationServices {
 
         const credentials = await this.tokenService.createLoginCredentials(newUser)
 
-        return res.status(200).json({
-            message: "Done",
+        return succsesResponse({
+            res,
             info: "Signup Succses",
             data: { credentials }
-        });
+        })
+
 
     }
 
@@ -284,6 +290,10 @@ class AuthenticationServices {
             throw new BadRequestException("Confirm Your Email To Login")
         }
 
+        if (user.freezedAt) {
+            throw new NotFoundException("User Not Found")
+        }
+
         const compare: boolean = await compareHash(password, user.password);
 
         if (!compare) {
@@ -292,13 +302,11 @@ class AuthenticationServices {
 
         const credentials = await this.tokenService.createLoginCredentials(user);
 
-        return res.status(200).json({
-            message: "Done",
+        return succsesResponse({
+            res,
             info: "Login Succses",
-            data: {
-                credentials
-            }
-        });
+            data: { credentials }
+        })
 
     }
 
@@ -322,25 +330,27 @@ class AuthenticationServices {
             await this.tokenService.createRevokeToken(req.tokenDecoded as JwtPayload);
         }
 
-        return res.status(200).json({
-            message: "Done",
+
+
+        return succsesResponse({
+            res,
             info: "Logout Succses",
-        });
+        })
 
     }
+
     refreshToken = async (req: Request, res: Response): Promise<Response> => {
 
         const credentials = await this.tokenService.createLoginCredentials(req.user as HUserDoucment)
 
         await this.tokenService.createRevokeToken(req.tokenDecoded as JwtPayload);
 
-        return res.status(200).json({
-            message: "Done",
-            data: credentials
-        });
+        return succsesResponse({
+            res,
+            data: { credentials }
+        })
 
     }
-
 
     changePassword = async (req: Request, res: Response): Promise<Response> => {
 
@@ -359,17 +369,20 @@ class AuthenticationServices {
 
         await this.userModel.updateOne({
             _id
-        },{
+        }, {
             password: await generateHash(newPassword)
         })
 
-        return res.status(200).json({
-            message: "Done",
+
+
+        return succsesResponse({
+            res,
             info: "Your Password Changed Succses"
-        });
+        })
+
+
 
     }
-
 
     frogetPassword = async (req: Request, res: Response): Promise<Response> => {
 
@@ -403,10 +416,12 @@ class AuthenticationServices {
 
         emailEvent.emit("forgetPassword", { to: email, OTPCode })
 
-        return res.status(200).json({
-            message: "Done",
+
+
+        return succsesResponse({
+            res,
             info: "Password reset code has been sent to your registered email"
-        });
+        })
 
     }
 
@@ -477,11 +492,10 @@ class AuthenticationServices {
         await this.userModel.updateOne({ email }, data)
         emailEvent.emit("forgetPassword", { to: email, OTPCode })
 
-
-        return res.status(200).json({
-            message: "Done",
+        return succsesResponse({
+            res,
             info: "A new password reset code has been sent to your registered email"
-        });
+        })
 
 
     }
@@ -504,7 +518,7 @@ class AuthenticationServices {
                 throw new BadRequestException("No OTP was requested for this account. Please request a new password reset")
             }
 
-            if (user.forgetPasswordOTPExpiresAt && user.forgetPasswordOTPExpiresAt.getTime() < Date.now()) {
+            if (user.forgetPasswordOTPExpiresAt && new Date(user.forgetPasswordOTPExpiresAt).getTime() < Date.now()) {
                 throw new BadRequestException("Expierd OTP")
             }
 
@@ -536,11 +550,11 @@ class AuthenticationServices {
 
         const credentials = await this.tokenService.createLoginCredentials(user);
 
-        return res.status(200).json({
-            message: "Done",
+        return succsesResponse({
+            res,
+            info: "Your Password Changed Succses",
             data: { credentials }
-        });
-
+        })
 
     }
 

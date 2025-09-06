@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express"
 import { z, type ZodError, type ZodType } from "zod";
 import { BadRequestException } from "../utils/response/error.response";
+import mongoose from "mongoose";
 
 
 type KeyReqType = keyof Request;
@@ -65,5 +66,9 @@ export const generalFields = {
     OTP: z.string().regex(/^\d{6}$/, { message: "OTP must be exactly 6 digits" }),
     token: z.string().regex(/^(Bearer|System)\s?[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
         "Invalid token format: token must start with 'Bearer' or 'System', followed by a space and a valid JWT"
-    )
+    ),
+    id: z.string()
+        .refine((val) => mongoose.Types.ObjectId.isValid(val), {
+            message: "Invalid ObjectId Format",
+        })
 }
