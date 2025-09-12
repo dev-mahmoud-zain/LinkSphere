@@ -635,6 +635,17 @@ class AuthenticationServices {
             throw new BadRequestException("OTP Code Time Expired");
         }
 
+        if(! await compareHash(OTP,user.twoSetupVerificationCode)){
+            throw new BadRequestException("Invalid OTP Code")
+        }
+
+        this.userModel.updateOne({
+            _id:user._id,
+        },{
+            $unset:{twoSetupVerificationCode:"",twoSetupVerificationCodeExpiresAt:""}
+        })
+
+
         const credentials = await this.tokenService.createLoginCredentials(user);
 
         return succsesResponse({
