@@ -50,7 +50,19 @@ router.post("/change-forget-password",
     AuthenticationServices.confirmForgetPasswordOTP(),
     AuthenticationServices.changeForgetPassword);
 
+router.patch("/enable-two-setup-verification",
+    authenticationMiddeware(),
+    AuthenticationServices.enableTwoSetupVerification);
 
+router.patch("/verify-enable-two-setup-verification",
+    authenticationMiddeware(),
+    validationMiddleware(authValidators.verifyEnableTwoSetupVerification),
+    AuthenticationServices.verifyEnableTwoSetupVerification);
+
+
+router.post("/login/verify-otp-code",
+    validationMiddleware(authValidators.verifyLoginOTPCode),
+    AuthenticationServices.verifyLoginOTPCode);
 
 
 

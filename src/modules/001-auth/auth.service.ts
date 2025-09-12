@@ -11,7 +11,7 @@ import type {
     IResendForgetPasswordOTP,
     ISignupWithGmail
 } from "./dto/auth.dto";
-import { HUserDoucment, ProviderEnum, UserModel } from "../../DataBase/models/user.model";
+import { HUserDoucment, ProviderEnum, TwoSetupVerificationEnum, UserModel } from "../../DataBase/models/user.model";
 import { ApplicationException, BadRequestException, ConflictException, NotFoundException } from "../../utils/response/error.response";
 import { compareHash, generateHash } from "../../utils/security/hash.security";
 import { emailEvent } from "../../utils/email/email.events";
@@ -277,7 +277,7 @@ class AuthenticationServices {
             filter: {
                 email
             },
-            select: { email: 1, password: 1, confirmedAt: 1, role: 1 }
+            select: { email: 1, password: 1, confirmedAt: 1, role: 1, twoSetupVerification: 1 }
         })
 
         if (!user) {
@@ -296,6 +296,25 @@ class AuthenticationServices {
 
         if (!compare) {
             throw new BadRequestException("Invalid Email Or Password");
+        }
+
+        if (user.twoSetupVerification === TwoSetupVerificationEnum.enable) {
+
+            const OTPCode = generateOTP();
+
+            await this.userModel.updateOne({
+                email,
+            }, {
+                twoSetupVerificationCode: OTPCode
+            });
+
+            emailEvent.emit("loginTwoStepVerification", { to: email, OTPCode });
+
+            return succsesResponse({
+                res,
+                info: "OTP Code Sent To Your Email",
+            })
+
         }
 
         const credentials = await this.tokenService.createLoginCredentials(user);
@@ -349,7 +368,6 @@ class AuthenticationServices {
         })
 
     }
-
 
     frogetPassword = async (req: Request, res: Response): Promise<Response> => {
 
@@ -524,6 +542,109 @@ class AuthenticationServices {
         })
 
     }
+
+    enableTwoSetupVerification = async (req: Request, res: Response): Promise<Response> => {
+
+        const user = await this.userModel.findOne({
+            filter: { _id: req.user?._id },
+        })
+
+        if (user?.twoSetupVerification === TwoSetupVerificationEnum.enable) {
+            throw new BadRequestException("Two Setup Verification Is Enabled")
+        }
+
+        if (user?.twoSetupVerificationCode) {
+            throw new BadRequestException("Alredy Ask To Enable Please Verify OTP Code")
+        }
+
+        const OTPCode = generateOTP();
+
+        await this.userModel.updateOne({
+            _id: req.user?._id
+        }, {
+            twoSetupVerificationCode: OTPCode,
+        })
+
+        emailEvent.emit("enableTwoStepVerification", { to: user?.email, OTPCode });
+
+        return succsesResponse({
+            res,
+            info: "OTP Code Sent To Your Email",
+        })
+
+    }
+
+    verifyEnableTwoSetupVerification = async (req: Request, res: Response): Promise<Response> => {
+
+        const OTPCode = req.body.validData.OTP;
+        const user = await this.userModel.findOne({
+            filter: { _id: req.user?._id }
+        })
+
+        if (user?.twoSetupVerification === TwoSetupVerificationEnum.enable) {
+            throw new BadRequestException("Two Setup Verification Is Enabled")
+        }
+
+        if (!user?.twoSetupVerificationCode) {
+            throw new NotFoundException("Not OTP Code For This User");
+        }
+
+        if (user?.twoSetupVerificationCodeExpiresAt
+            && (user?.twoSetupVerificationCodeExpiresAt.getTime() <= Date.now())
+        ) {
+            throw new BadRequestException("OTP Code Time Expired");
+        }
+
+        if (!await compareHash(OTPCode, user.twoSetupVerificationCode)) {
+            throw new BadRequestException("Invlid OTP Code")
+        }
+
+        await this.userModel.updateOne({
+            _id: req.user?._id
+        }, {
+            $set: { twoSetupVerification: TwoSetupVerificationEnum.enable },
+            $unset: { twoSetupVerificationCode: "", twoSetupVerificationCodeExpiresAt: "" }
+        })
+
+        return succsesResponse({
+            res,
+            info: "Tow Setup Verification Is Enabled Succses",
+        })
+
+    }
+
+    verifyLoginOTPCode = async (req: Request, res: Response): Promise<Response> => {
+
+        const { email, OTP } = req.body.validData;
+
+        const user = await this.userModel.findOne({
+            filter: { email },
+        })
+
+        if (!user) {
+            throw new NotFoundException("User Not Exsists");
+        }
+
+        if (!user.twoSetupVerificationCode) {
+            throw new NotFoundException("No OTP Code For This User");
+        }
+
+        if (user?.twoSetupVerificationCodeExpiresAt
+            && (user?.twoSetupVerificationCodeExpiresAt.getTime() <= Date.now())
+        ) {
+            throw new BadRequestException("OTP Code Time Expired");
+        }
+
+        const credentials = await this.tokenService.createLoginCredentials(user);
+
+        return succsesResponse({
+            res,
+            info: "Login Succses",
+            data: { credentials }
+        })
+
+    }
+
 
 }
 

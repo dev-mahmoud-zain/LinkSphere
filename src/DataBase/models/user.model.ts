@@ -15,41 +15,64 @@ export enum ProviderEnum {
     google = "google"
 }
 
+export enum TwoSetupVerificationEnum {
+    enable = "enable",
+    disable = "disable"
+}
+
 export interface IUser {
     _id: Schema.Types.ObjectId;
     firstName: string;
     lastName: string;
     userName?: string;
     slug: string;
+
     email: string;
     confirmedAt: Date;
     confirmEmailOTP?: string;
     confirmEmailSentTime?: Date;
     OTPReSendCount: number;
     otpBlockExpiresAt: Date;
-    newEmail?:string,
+
+    newEmail?: string,
     updateEmailOTP?: string;
     updateEmailOTPExpiresAt?: Date;
+
     password: string,
     reSetPasswordOTP: string;
+
     changeCredentialsTime?: Date;
+
     phone?: string;
+
     adress?: string;
+
     gender: GenderEnum;
+
     role: RoleEnum;
+
     createdAt: Date;
+
     updatedAt?: Date;
+
     provider: string;
+
     picture?: string;
     coverImages?: string[],
+
     forgetPasswordOTP?: string;
     forgetPasswordOTPExpiresAt?: Date;
     forgetPasswordCount?: number;
     forgetPasswordBlockExpiresAt?: Date;
+
     freezedAt?: Date;
     freezedBy?: Schema.Types.ObjectId;
     restoredAt?: Date;
     restoredBy?: Schema.Types.ObjectId;
+
+    twoSetupVerification: TwoSetupVerificationEnum;
+    twoSetupVerificationCode?: string;
+    twoSetupVerificationCodeExpiresAt?: Date;
 }
 
 const userSchema = new Schema<IUser>({
@@ -63,7 +86,7 @@ const userSchema = new Schema<IUser>({
     OTPReSendCount: { type: Number, max: 5 },
     otpBlockExpiresAt: { type: Date },
 
-    newEmail:{ type: String },
+    newEmail: { type: String },
     updateEmailOTP: { type: String },
     updateEmailOTPExpiresAt: { type: Date },
 
@@ -97,8 +120,11 @@ const userSchema = new Schema<IUser>({
     freezedBy: { type: Schema.Types.ObjectId, ref: "User" },
 
     restoredAt: { type: Date },
-    restoredBy: { type: Schema.Types.ObjectId, ref: "User" }
+    restoredBy: { type: Schema.Types.ObjectId, ref: "User" },
 
+    twoSetupVerification: { type: String, enum: TwoSetupVerificationEnum, default: TwoSetupVerificationEnum.disable },
+    twoSetupVerificationCode: { type: String },
+    twoSetupVerificationCodeExpiresAt: { type: Date },
 },
     {
         strictQuery: true,
@@ -124,6 +150,11 @@ userSchema.pre("findOneAndUpdate",
         if (update.updateEmailOTP) {
             update.updateEmailOTP = await generateHash(update.updateEmailOTP)
             update.updateEmailOTPExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+        }
+
+        if (update.twoSetupVerificationCode) {
+            update.twoSetupVerificationCode = await generateHash(update.twoSetupVerificationCode)
+            update.twoSetupVerificationCodeExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
         }
 
         this.setUpdate(update)
