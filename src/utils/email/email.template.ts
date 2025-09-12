@@ -34,6 +34,40 @@ export const confirmEmailTemplate = async ({ OTPCode }: { OTPCode: string }): Pr
 }
 
 
+export const updateEmailTemplate = async ({ OTPCode }: { OTPCode: string }): Promise<string> => {
+    return ` 
+  <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; background-color: #f4f7fb; color: #333; max-width: 600px; margin: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
+    
+    <h2 style="color: #2c3e50; margin-bottom: 10px;">🔄 Confirm Your New Email</h2>
+    <p style="font-size: 16px; line-height: 1.6; margin: 0 0 15px;">
+        You have requested to update your email address in <strong style="color:#4a90e2;">LinkSphere</strong>.
+    </p>
+    <p style="font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
+        Please use the following code to verify your new email:
+    </p>
+
+    <div style="margin: 20px auto; padding: 18px 35px; background: linear-gradient(135deg,#fff3e0,#fbe9e7); border: 2px dashed #ff9800; border-radius: 12px; display: inline-block; font-size: 26px; letter-spacing: 5px; font-weight: bold; color:#e65100; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+        ${OTPCode}
+    </div>
+
+    <p style="font-size: 14px; color: #555; line-height: 1.6; margin: 20px 0;">
+        This code is valid for <strong> 1 Hour </strong>.<br>
+        If you did not request this email update, please ignore this message and keep your current email secure.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+
+    <p style="font-size: 13px; color: #888; margin: 0;">
+        Thanks,<br>
+        <strong style="color:#4a90e2;">LinkSphere Developer</strong><br>
+        <span style="font-size: 12px; color:#aaa;">Adham Zain</span>
+    </p>
+</div>
+  `;
+};
+
+
+
 export const forgetPasswordTemplate = async ({ OTPCode }: { OTPCode: string }): Promise<string> => {
     return `
 <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; background-color: #f4f7fb; color: #333; max-width: 600px; margin: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
@@ -69,9 +103,8 @@ export const forgetPasswordTemplate = async ({ OTPCode }: { OTPCode: string }): 
   `;
 };
 
-
 export const passwordChangedTemplate = async (): Promise<string> => {
-  return `
+    return `
 <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; background-color: #f9fafc; color: #333; max-width: 600px; margin: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
     
     <h2 style="color: #2ecc71; margin-bottom: 10px;">🔐 Password Changed Successfully</h2>
@@ -95,3 +128,35 @@ export const passwordChangedTemplate = async (): Promise<string> => {
   `;
 };
 
+export const mentionNotificationTemplate = async (
+    postLink: string,
+    mentionedBy: string
+): Promise<string> => {
+    return `
+<div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; background-color: #f9fafc; color: #333; max-width: 600px; margin: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
+    
+    <h2 style="color: #4a90e2; margin-bottom: 10px;">📢 You’ve Been Mentioned!</h2>
+    
+    <p style="font-size: 16px; line-height: 1.6; margin: 0 0 15px;">
+        <strong style="color:#2ecc71;">${mentionedBy}</strong> mentioned you in a post on 
+        <strong style="color:#4a90e2;">LinkSphere</strong>.
+    </p>
+    
+    <p style="font-size: 15px; line-height: 1.6; margin: 0 0 20px; color: #555;">
+        Click the button below to view the post and join the conversation.
+    </p>
+
+    <a href="${postLink}" style="display: inline-block; padding: 12px 24px; background-color: #4a90e2; color: white; text-decoration: none; border-radius: 6px; font-size: 15px; font-weight: bold; margin-bottom: 20px;">
+        🔗 View Post
+    </a>
+
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+
+    <p style="font-size: 13px; color: #888; margin: 0;">
+        Thanks,<br>
+        <strong style="color:#4a90e2;">LinkSphere</strong><br>
+        <span style="font-size: 12px; color:#aaa;">Developer: Adham Zain</span>
+    </p>
+</div>
+  `;
+};

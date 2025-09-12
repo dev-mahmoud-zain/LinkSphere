@@ -129,6 +129,7 @@ export const uploadFiles = async (
     if (largeFiles) {
 
         urls = await Promise.all(files.map((file) => {
+
             return uploadLargeFile({
                 file,
                 path,

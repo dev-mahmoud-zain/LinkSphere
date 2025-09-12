@@ -6,38 +6,63 @@ import { validationMiddleware } from "../../middlewares/validation.middleware";
 import * as usersValidation from "./users.validation";
 import { endPoints } from "./users.authorization";
 
-const usersRouter = Router();
+const router = Router();
 
-usersRouter.get("/profile", authenticationMiddeware(), usersService.profile);
+router.get("/profile",
+    authenticationMiddeware(),
+    usersService.profile);
 
-usersRouter.patch("/profile-picture",
+
+router.patch("/change-password",
+    authenticationMiddeware(),
+    validationMiddleware(usersValidation.changePassword),
+    usersService.changePassword);
+
+router.patch("/profile-picture",
     authenticationMiddeware(),
     cloudFileUpload({ validation: fileValidation.image, storageApproach: StorageEnum.memory }).single("image")
     , usersService.uploadProfilePicture);
 
-usersRouter.delete("/profile-picture",
+router.delete("/profile-picture",
     authenticationMiddeware(),
     usersService.deleteProfilePicture);
 
 
-usersRouter.patch("/profile-cover-images",
+router.patch("/profile-cover-images",
     authenticationMiddeware(),
     cloudFileUpload({ validation: fileValidation.image, storageApproach: StorageEnum.disk }).array("images", 2)
     , usersService.uploadCoverImages);
 
 
-usersRouter.delete("/cover-images",
+router.delete("/cover-images",
     authenticationMiddeware(),
     usersService.deleteCoverImages);
 
-usersRouter.delete("/freez/{:userId}",
+router.delete("/freez/{:userId}",
     authorizationMiddeware(endPoints.freezAccount),
     validationMiddleware(usersValidation.freezAccount),
     usersService.freezAccount);
 
-usersRouter.delete("/delete/{:userId}",
+router.delete("/delete/{:userId}",
     authorizationMiddeware(endPoints.freezAccount),
     validationMiddleware(usersValidation.deleteAccount),
     usersService.deleteAccount);
 
-export default usersRouter;
+router.patch("/update-basic-info",
+    authenticationMiddeware(),
+    validationMiddleware(usersValidation.updateBasicInfo),
+    usersService.updateBasicInfo);
+
+
+router.patch("/update-email",
+    authenticationMiddeware(),
+    validationMiddleware(usersValidation.updateEmail),
+    usersService.updateEmail);
+
+
+router.patch("/confirm-update-email",
+    authenticationMiddeware(),
+    validationMiddleware(usersValidation.confirmUpdateEmail),
+    usersService.confirmUpdateEmail);
+
+export default router;

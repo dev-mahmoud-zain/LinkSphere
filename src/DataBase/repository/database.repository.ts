@@ -86,7 +86,35 @@ export abstract class DataBaseRepository<TDocument> {
         updateData: UpdateQuery<TDocument>,
         options: QueryOptions = { new: true }
     ): Promise<HydratedDocument<TDocument>> {
-        
+
+        const updatedDoc = await this.model.findOneAndUpdate(
+            filter,
+            {
+                ...updateData,
+                $inc: { __v: 1 }
+            },
+            options
+        ).exec();
+
+        if (!updatedDoc) {
+            throw new NotFoundException("Document not found");
+        }
+
+        return updatedDoc;
+    }
+
+    async findOneAndUpdate(
+        {
+            filter,
+            updateData,
+            options
+        }: {
+            filter?: RootFilterQuery<TDocument>,
+            updateData: UpdateQuery<TDocument> ,
+            options?: QueryOptions<TDocument> | null
+        }): Promise< HydratedDocument<TDocument>
+            | null> {
+
         const updatedDoc = await this.model.findOneAndUpdate(
             filter,
             {
@@ -112,8 +140,8 @@ export abstract class DataBaseRepository<TDocument> {
     }
 
     async deleteOne(
-         filter: FilterQuery<TDocument>
-    ){
+        filter: FilterQuery<TDocument>
+    ) {
         return this.model.deleteOne(filter)
     }
 

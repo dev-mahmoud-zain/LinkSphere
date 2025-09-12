@@ -13,10 +13,17 @@ import { config } from "dotenv";
 config({ path: resolve("./config/.env.development") })
 
 // Import Modules Routers
-import authRouter from "./modules/001-auth/auth.controller";
-import {  glopalErrorHandler } from "./utils/response/error.response";
+// import authRouter from "./modules/001-auth/auth.controller";
+
+import { authRouter, postsRouter, usersRouter } from "./modules/";
+
+
+
+
+
+
+import { glopalErrorHandler } from "./utils/response/error.response";
 import connectToDataBase from "./DataBase/DB_Connection";
-import usersRouter from "./modules/002-users/users.controller";
 
 
 
@@ -62,6 +69,9 @@ export default async function bootstrap(): Promise<void> {
 
     // Users Router
     app.use("/users", usersRouter);
+
+    // Users Router
+    app.use("/posts", postsRouter);
 
     // Get Asset From S3 :
     //  ملهاش لازمة حالياً 

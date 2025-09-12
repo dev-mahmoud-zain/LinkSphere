@@ -91,25 +91,3 @@ export const changeForgetPassword = {
     })
 }
 
-export const changePassword = {
-    body: z.object({
-        oldPassword: generalFields.password,
-        newPassword: generalFields.password,
-        confirmNewPassword: z.string()
-    }).superRefine((data, ctx) => {
-        if (data.newPassword !== data.confirmNewPassword) {
-            ctx.addIssue({
-                code: "custom",
-                path: ["confirmNewPassword"],
-                message: "newPassword and confirmNewPassword must be the same."
-            })
-        }
-        if (data.oldPassword === data.newPassword) {
-            ctx.addIssue({
-                code: "custom",
-                path: ["oldPassword"],
-                message: "Old Password And New Password Cannot Be The Same."
-            })
-        }
-    })
-}

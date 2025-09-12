@@ -6,14 +6,14 @@ import { BadRequestException } from "../response/error.response";
 
 export const sendEmail = async (data: Mail.Options): Promise<void> => {
 
-
     if (!data.html && data.attachments?.length && !data.text) {
         throw new BadRequestException("Missing Email Content!!");
     }
 
-
     const transporter:
+
         Transporter<SMTPTransport.SentMessageInfo, SMTPTransport.Options>
+
         = createTransport({
             service: "gmail",
             auth: {

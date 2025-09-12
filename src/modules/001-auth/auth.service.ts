@@ -11,7 +11,6 @@ import type {
     IResendForgetPasswordOTP,
     ISignupWithGmail
 } from "./dto/auth.dto";
-import { UserRepository } from "../../DataBase/repository/user.repository";
 import { HUserDoucment, ProviderEnum, UserModel } from "../../DataBase/models/user.model";
 import { ApplicationException, BadRequestException, ConflictException, NotFoundException } from "../../utils/response/error.response";
 import { compareHash, generateHash } from "../../utils/security/hash.security";
@@ -22,6 +21,7 @@ import { JwtPayload } from "jsonwebtoken";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { UpdateQuery } from "mongoose";
 import { succsesResponse } from "../../utils/response/succses.response";
+import { UserRepository } from "../../DataBase/repository";
 
 class AuthenticationServices {
 
@@ -64,15 +64,13 @@ class AuthenticationServices {
             data: [{
                 userName,
                 email,
-                password: await generateHash(password),
+                password,
                 gender,
-                confirmEmailOTP: await generateHash(OTPCode),
+                confirmEmailOTP: OTPCode,
                 confirmEmailSentTime: new Date(),
                 ...(phone ? { phone } : {})
             }]
         })
-
-        emailEvent.emit("confirmEmail", { to: email, OTPCode })
 
         return succsesResponse({
             res,
@@ -352,37 +350,6 @@ class AuthenticationServices {
 
     }
 
-    changePassword = async (req: Request, res: Response): Promise<Response> => {
-
-
-        const { _id, email, password } = req.user as HUserDoucment;
-        const { oldPassword, newPassword }: IChangePassword = req.body
-
-
-        if (!await compareHash(oldPassword, password)) {
-            throw new BadRequestException("Invalid Old Password")
-        }
-
-        const OTPCode = generateOTP();
-        emailEvent.emit("changePassword", { to: email, OTPCode })
-
-
-        await this.userModel.updateOne({
-            _id
-        }, {
-            password: await generateHash(newPassword)
-        })
-
-
-
-        return succsesResponse({
-            res,
-            info: "Your Password Changed Succses"
-        })
-
-
-
-    }
 
     frogetPassword = async (req: Request, res: Response): Promise<Response> => {
 

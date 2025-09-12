@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express"
 import { z, type ZodError, type ZodType } from "zod";
 import { BadRequestException } from "../utils/response/error.response";
 import mongoose from "mongoose";
+import { GenderEnum } from "../DataBase/models/user.model";
 
 
 type KeyReqType = keyof Request;
@@ -9,10 +10,11 @@ type SchimaType = Partial<Record<KeyReqType, ZodType>>;
 type validationErrorsType = Array<{
     key: KeyReqType,
     issues: Array<{
-        path: string | number | symbol | undefined,
+        path: (string | number | symbol | undefined)[],
         message: string
     }>;
 }>
+
 
 
 export const validationMiddleware = (schima: SchimaType) => {
@@ -21,7 +23,16 @@ export const validationMiddleware = (schima: SchimaType) => {
         const validationErrors: validationErrorsType = [];
 
         for (const key of Object.keys(schima) as KeyReqType[]) {
+
             if (!schima[key]) continue;
+
+            if (req.file) {
+                req.body.attachments = req.file;
+            }
+
+            if (req.files) {
+                req.body.attachments = req.files;
+            }
 
             const validationResult = schima[key].safeParse(req[key]);
 
@@ -32,7 +43,7 @@ export const validationMiddleware = (schima: SchimaType) => {
                     key,
                     issues: errors.issues.map(issue => {
                         return {
-                            path: issue.path[0],
+                            path: issue.path,
                             message: issue.message
                         }
                     })
@@ -55,14 +66,23 @@ export const validationMiddleware = (schima: SchimaType) => {
 }
 
 export const generalFields = {
-    userName: z.string({ error: "userName Must Be String" })
-        .min(3, { error: "userName Min Lenght Is 3 Letters" })
-        .max(30, { error: "userName Max Lenght Is 30 Letters" }),
+    userName: z
+        .string()
+        .min(3, { message: "userName min length is 3 letters" })
+        .max(30, { message: "userName max length is 30 letters" })
+        .refine(
+            (val) => {
+                const parts = val.trim().split(/\s+/);
+                return parts.length === 2;
+            },
+            { message: "userName must consist of two words (Firstname Lastname)" }
+        ),
     email: z.email(),
     password: z.string({ error: "password Must Be String" })
         .regex(/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/,
             { error: "Password should be 8+ chars with uppercase, lowercase, number, and special character." }),
     phone: z.string().regex(/^(?:01[0125]\d{8}|(?:\+20|0020)1[0125]\d{8})$/),
+    gender: z.enum(GenderEnum),
     OTP: z.string().regex(/^\d{6}$/, { message: "OTP must be exactly 6 digits" }),
     token: z.string().regex(/^(Bearer|System)\s?[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/,
         "Invalid token format: token must start with 'Bearer' or 'System', followed by a space and a valid JWT"
@@ -70,5 +90,21 @@ export const generalFields = {
     id: z.string()
         .refine((val) => mongoose.Types.ObjectId.isValid(val), {
             message: "Invalid ObjectId Format",
-        })
+        }),
+
+    file: function (mimetype: string[]) {
+
+        return z.object({
+            fieldname: z.string(),
+            originalname: z.string(),
+            encoding: z.string(),
+            mimetype: z.enum(mimetype),
+            buffer: z.any().optional(),
+            path: z.any().optional(),
+            size: z.number()
+        }).refine((data) => {
+            return data.buffer || data.path;
+        }, { error: "Neither Path Or Buffer Is Avalibale", path: ["file"] })
+
+    }
 }

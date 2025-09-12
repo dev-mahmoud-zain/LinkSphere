@@ -33,8 +33,6 @@ export const authenticationMiddeware = (tokenType: TokenTypeEnum = TokenTypeEnum
 
 }
 
-
-
 export const authorizationMiddeware = (accsesRoles: RoleEnum[]) => {
 
     return async (req: Request, res: Response, next: NextFunction) => {

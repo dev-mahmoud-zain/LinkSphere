@@ -2,10 +2,9 @@ import jwt, { JwtPayload, Secret, SignOptions } from "jsonwebtoken";
 import { ObjectId } from "mongoose";
 import { HUserDoucment, RoleEnum, UserModel } from "../../DataBase/models/user.model";
 import { BadRequestException, InvalidTokenException, UnAuthorizedException } from "../response/error.response";
-import { UserRepository } from "../../DataBase/repository/user.repository";
 import { v4 as uuid } from "uuid"
-import { TokenRepository } from "../../DataBase/repository/token.repository";
 import { HTokenDocument, TokenModel } from "../../DataBase/models/token.model";
+import { TokenRepository, UserRepository } from "../../DataBase/repository";
 
 interface IGenerateToken {
     payload: {
@@ -162,6 +161,7 @@ export class TokenService {
         const user = await this.userModel.findOne({
             filter: {
                 _id: decoded._id,
+                pranoId: true,
                 confirmedAt: { $exists: true }
             }
         })
@@ -177,7 +177,7 @@ export class TokenService {
         return { decoded, user };
     }
 
-    createRevokeToken = async (tokenDecoded: JwtPayload,) : Promise<HTokenDocument> =>  {
+    createRevokeToken = async (tokenDecoded: JwtPayload,): Promise<HTokenDocument> => {
 
         const [result] = await this.tokenModel.create({
             data: [{
@@ -188,7 +188,7 @@ export class TokenService {
         }) || []
 
 
-        if(!result){
+        if (!result) {
             throw new BadRequestException("Fail To Revoke Token")
         }
 

@@ -1,4 +1,6 @@
-import { Schema, models, model, Document, HydratedDocument } from "mongoose";
+import { Schema, models, model, HydratedDocument } from "mongoose";
+import { generateHash } from "../../utils/security/hash.security";
+import { emailEvent } from "../../utils/email/email.events";
 
 export enum GenderEnum {
     male = "male",
@@ -13,17 +15,21 @@ export enum ProviderEnum {
     google = "google"
 }
 
-export interface IUser extends Document {
+export interface IUser {
     _id: Schema.Types.ObjectId;
     firstName: string;
     lastName: string;
     userName?: string;
+    slug: string;
     email: string;
     confirmedAt: Date;
     confirmEmailOTP?: string;
     confirmEmailSentTime?: Date;
     OTPReSendCount: number;
     otpBlockExpiresAt: Date;
+    newEmail?:string,
+    updateEmailOTP?: string;
+    updateEmailOTPExpiresAt?: Date;
     password: string,
     reSetPasswordOTP: string;
     changeCredentialsTime?: Date;
@@ -49,13 +55,17 @@ export interface IUser extends Document {
 const userSchema = new Schema<IUser>({
     firstName: { type: String, required: true, min: 3, max: 25 },
     lastName: { type: String, required: true, min: 3, max: 25 },
-
+    slug: { type: String, required: true, min: 6, max: 51 },
     email: { type: String, required: true, unique: true },
     confirmedAt: { type: Date },
     confirmEmailOTP: { type: String },
     confirmEmailSentTime: { type: Date },
     OTPReSendCount: { type: Number, max: 5 },
     otpBlockExpiresAt: { type: Date },
+
+    newEmail:{ type: String },
+    updateEmailOTP: { type: String },
+    updateEmailOTPExpiresAt: { type: Date },
 
     password: {
         type: String, required: function () {
@@ -91,6 +101,7 @@ const userSchema = new Schema<IUser>({
 
 },
     {
+        strictQuery: true,
         timestamps: true,
         toJSON: { virtuals: true },
         toObject: { virtuals: true }
@@ -100,10 +111,73 @@ const userSchema = new Schema<IUser>({
 
 userSchema.virtual("userName").set(function (value: String) {
     const [firstName, lastName] = value.split(" ") || [];
-    this.set({ firstName, lastName });
+    this.set({ firstName, lastName, slug: value.replaceAll(/\s+/g, "-").toLocaleLowerCase() });
 }).get(function () {
     return this.firstName + " " + this.lastName;
-})
+});
+
+userSchema.pre("findOneAndUpdate",
+    async function (next) {
+
+        const update: any = this.getUpdate();
+
+        if (update.updateEmailOTP) {
+            update.updateEmailOTP = await generateHash(update.updateEmailOTP)
+            update.updateEmailOTPExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+        }
+
+        this.setUpdate(update)
+    });
+
+
+
+
+userSchema.pre("save",
+    async function (this: HUserDoucment & { wasNew: boolean; OTPCode?: string }, next) {
+
+        this.wasNew = this.isNew;
+
+        const modifiedPaths = this.modifiedPaths();
+
+        console.log(modifiedPaths)
+
+        if (modifiedPaths.includes("password"))
+            this.password = await generateHash(this.password);
+
+        if (modifiedPaths.includes("confirmEmailOTP") && this.confirmEmailOTP) {
+            this.OTPCode = this.confirmEmailOTP;
+            this.confirmEmailOTP = await generateHash(this.confirmEmailOTP);
+        }
+
+    });
+
+
+
+
+
+userSchema.post("save", async function (next) {
+    const that = this as HUserDoucment & { wasNew: boolean, OTPCode?: string }
+    if (that.wasNew && that.OTPCode)
+        emailEvent.emit("confirmEmail", { to: this.email, OTPCode: that.OTPCode });
+});
+
+userSchema.pre(["updateOne", "findOne", "find"], function (next) {
+    const query = this.getQuery();
+    if (query.pranoId === false) {
+        this.setQuery({ ...query });
+    }
+    else {
+        this.setQuery({ ...query, freezedAt: { $exists: false } });
+    }
+    next()
+});
+
+
+
+
+
+
+
 
 export const UserModel = models.User || model<IUser>("User", userSchema);
 
