@@ -170,8 +170,6 @@ userSchema.pre("save",
 
         const modifiedPaths = this.modifiedPaths();
 
-        console.log(modifiedPaths)
-
         if (modifiedPaths.includes("password"))
             this.password = await generateHash(this.password);
 

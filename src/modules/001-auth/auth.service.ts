@@ -5,7 +5,6 @@ import type {
     I_ReSendConfirmEmailIOTPInputs,
     I_SignupBodyInputs,
     IChangeForgetPassword,
-    IChangePassword,
     IForgetPassword,
     ILogout,
     IResendForgetPasswordOTP,
@@ -31,19 +30,8 @@ class AuthenticationServices {
     constructor() { }
 
 
-    private verifyGmailAccount = async (idToken: string): Promise<TokenPayload> => {
 
-        const client = new OAuth2Client();
-        const ticket = await client.verifyIdToken({
-            idToken,
-            audience: process.env.WEB_CLIENT_ID as string,
-        });
-        const payload = ticket.getPayload();
-        if (!payload?.email_verified) {
-            throw new BadRequestException("Fail To Verify This Account")
-        }
-        return payload;
-    }
+    // ================= Account Registration & Email Verification =================
 
     signup = async (req: Request, res: Response): Promise<Response> => {
 
@@ -55,7 +43,10 @@ class AuthenticationServices {
         })
 
         if (userExsist) {
-            throw new ConflictException("Email Alredy Exsists Try To Login", userExsist)
+            throw new ConflictException("Email Alredy Exsists Try To Login", {issues:{
+                path:"email",
+                value:email
+            }})
         }
 
         const OTPCode = generateOTP();
@@ -195,6 +186,20 @@ class AuthenticationServices {
 
     }
 
+    private verifyGmailAccount = async (idToken: string): Promise<TokenPayload> => {
+
+        const client = new OAuth2Client();
+        const ticket = await client.verifyIdToken({
+            idToken,
+            audience: process.env.WEB_CLIENT_ID as string,
+        });
+        const payload = ticket.getPayload();
+        if (!payload?.email_verified) {
+            throw new BadRequestException("Fail To Verify This Account")
+        }
+        return payload;
+    }
+
     loginWithGmail = async (req: Request, res: Response): Promise<Response> => {
 
         const { idToken }: ISignupWithGmail = req.body.validData
@@ -269,6 +274,8 @@ class AuthenticationServices {
 
     }
 
+    // ======================== Login & Session Management =========================
+    
     login = async (req: Request, res: Response): Promise<Response> => {
 
         const { email, password }: I_loginBodyInputs = req.body.validData;
@@ -327,6 +334,50 @@ class AuthenticationServices {
 
     }
 
+    verifyLoginOTPCode = async (req: Request, res: Response): Promise<Response> => {
+
+        const { email, OTP } = req.body.validData;
+
+        const user = await this.userModel.findOne({
+            filter: { email },
+        })
+
+        if (!user) {
+            throw new NotFoundException("User Not Exsists");
+        }
+
+        if (!user.twoSetupVerificationCode) {
+            throw new NotFoundException("No OTP Code For This User");
+        }
+
+        if (user?.twoSetupVerificationCodeExpiresAt
+            && (user?.twoSetupVerificationCodeExpiresAt.getTime() <= Date.now())
+        ) {
+            throw new BadRequestException("OTP Code Time Expired");
+        }
+
+        if (! await compareHash(OTP, user.twoSetupVerificationCode)) {
+            throw new BadRequestException("Invalid OTP Code")
+        }
+
+        this.userModel.updateOne({
+            _id: user._id,
+        }, {
+            $unset: { twoSetupVerificationCode: "", twoSetupVerificationCodeExpiresAt: "" }
+        })
+
+
+        const credentials = await this.tokenService.createLoginCredentials(user);
+
+        return succsesResponse({
+            res,
+            info: "Login Succses",
+            data: { credentials }
+        })
+
+    }
+
+
     logout = async (req: Request, res: Response): Promise<Response> => {
 
         const { logoutFlag }: ILogout = req.body.validData;
@@ -369,6 +420,8 @@ class AuthenticationServices {
 
     }
 
+
+    // =================== Password Reset (Forget Password Flow) ===================
     frogetPassword = async (req: Request, res: Response): Promise<Response> => {
 
         const { email }: IForgetPassword = req.body.validData;
@@ -543,46 +596,53 @@ class AuthenticationServices {
 
     }
 
-    enableTwoSetupVerification = async (req: Request, res: Response): Promise<Response> => {
+
+    // ======================== Two-Step Verification (2FA) ========================
+    changeTwoSetupVerification = async (req: Request, res: Response): Promise<Response> => {
 
         const user = await this.userModel.findOne({
             filter: { _id: req.user?._id },
         })
 
-        if (user?.twoSetupVerification === TwoSetupVerificationEnum.enable) {
-            throw new BadRequestException("Two Setup Verification Is Enabled")
-        }
+        let action = TwoSetupVerificationEnum.enable; //defult = enable
 
         if (user?.twoSetupVerificationCode) {
-            throw new BadRequestException("Alredy Ask To Enable Please Verify OTP Code")
+            throw new BadRequestException("Alredy Ask To disable Please Verify OTP Code")
+        }
+        if (user?.twoSetupVerification === TwoSetupVerificationEnum.enable) {
+            action = TwoSetupVerificationEnum.disable;
         }
 
         const OTPCode = generateOTP();
-
         await this.userModel.updateOne({
             _id: req.user?._id
         }, {
             twoSetupVerificationCode: OTPCode,
         })
 
-        emailEvent.emit("enableTwoStepVerification", { to: user?.email, OTPCode });
+        const event = action === TwoSetupVerificationEnum.enable ? "enableTwoStepVerification" : "disableTwoStepVerification";
+        emailEvent.emit(event, { to: user?.email, OTPCode });
 
         return succsesResponse({
             res,
-            info: "OTP Code Sent To Your Email",
+            info: `OTP Code Sent To Your Email , will ${action} after Verify OTP`,
         })
 
     }
 
+
     verifyEnableTwoSetupVerification = async (req: Request, res: Response): Promise<Response> => {
 
         const OTPCode = req.body.validData.OTP;
+
         const user = await this.userModel.findOne({
             filter: { _id: req.user?._id }
         })
 
+        let action = TwoSetupVerificationEnum.enable; //defult = enable
+
         if (user?.twoSetupVerification === TwoSetupVerificationEnum.enable) {
-            throw new BadRequestException("Two Setup Verification Is Enabled")
+            action = TwoSetupVerificationEnum.disable;
         }
 
         if (!user?.twoSetupVerificationCode) {
@@ -602,59 +662,22 @@ class AuthenticationServices {
         await this.userModel.updateOne({
             _id: req.user?._id
         }, {
-            $set: { twoSetupVerification: TwoSetupVerificationEnum.enable },
+            $set: { twoSetupVerification: action },
             $unset: { twoSetupVerificationCode: "", twoSetupVerificationCodeExpiresAt: "" }
         })
 
+        const info =
+            action === TwoSetupVerificationEnum.enable ?
+                "Tow Setup Verification Is Enabled Succses" :
+                "Tow Setup Verification Is Disabled Succses";
+
         return succsesResponse({
             res,
-            info: "Tow Setup Verification Is Enabled Succses",
+            info,
         })
 
     }
 
-    verifyLoginOTPCode = async (req: Request, res: Response): Promise<Response> => {
-
-        const { email, OTP } = req.body.validData;
-
-        const user = await this.userModel.findOne({
-            filter: { email },
-        })
-
-        if (!user) {
-            throw new NotFoundException("User Not Exsists");
-        }
-
-        if (!user.twoSetupVerificationCode) {
-            throw new NotFoundException("No OTP Code For This User");
-        }
-
-        if (user?.twoSetupVerificationCodeExpiresAt
-            && (user?.twoSetupVerificationCodeExpiresAt.getTime() <= Date.now())
-        ) {
-            throw new BadRequestException("OTP Code Time Expired");
-        }
-
-        if(! await compareHash(OTP,user.twoSetupVerificationCode)){
-            throw new BadRequestException("Invalid OTP Code")
-        }
-
-        this.userModel.updateOne({
-            _id:user._id,
-        },{
-            $unset:{twoSetupVerificationCode:"",twoSetupVerificationCodeExpiresAt:""}
-        })
-
-
-        const credentials = await this.tokenService.createLoginCredentials(user);
-
-        return succsesResponse({
-            res,
-            info: "Login Succses",
-            data: { credentials }
-        })
-
-    }
 
 
 }

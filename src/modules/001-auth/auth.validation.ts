@@ -1,4 +1,4 @@
-import { email, z } from "zod";
+import {  z } from "zod";
 import { generalFields } from "../../middlewares/validation.middleware";
 import { GenderEnum } from "../../DataBase/models/user.model";
 import { LogoutFlagEnum, TokenTypeEnum } from "../../utils/security/token.security";
@@ -96,7 +96,6 @@ export const verifyEnableTwoSetupVerification = {
         OTP: generalFields.OTP,
     })
 }
-
 
 export const verifyLoginOTPCode = {
     body: z.strictObject({

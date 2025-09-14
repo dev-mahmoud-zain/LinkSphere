@@ -8,6 +8,9 @@ import { TokenTypeEnum } from "../../utils/security/token.security";
 const router = Router();
 
 
+
+// ================= Account Registration & Email Verification =================
+
 router.post("/signup",
     validationMiddleware(authValidators.signup),
     AuthenticationServices.signup);
@@ -24,9 +27,16 @@ router.post("/signup-with-gmail",
     validationMiddleware(authValidators.signupWithGmail),
     AuthenticationServices.signupWithGmail);
 
+
+// ======================== Login & Session Management =========================
+
 router.post("/login",
     validationMiddleware(authValidators.login),
     AuthenticationServices.login);
+
+router.post("/login/verify-otp-code",
+    validationMiddleware(authValidators.verifyLoginOTPCode),
+    AuthenticationServices.verifyLoginOTPCode);
 
 router.post("/logout",
     validationMiddleware(authValidators.logout),
@@ -36,6 +46,9 @@ router.post("/logout",
 router.get("/refresh-token",
     authenticationMiddeware(TokenTypeEnum.refresh),
     AuthenticationServices.refreshToken);
+
+
+// =================== Password Reset (Forget Password Flow) ===================
 
 router.post("/forget-password",
     validationMiddleware(authValidators.frogetPassword),
@@ -50,9 +63,12 @@ router.post("/change-forget-password",
     AuthenticationServices.confirmForgetPasswordOTP(),
     AuthenticationServices.changeForgetPassword);
 
-router.patch("/enable-two-setup-verification",
+
+// ======================== Two-Step Verification (2FA) ========================
+ 
+router.patch("/change-two-setup-verification",
     authenticationMiddeware(),
-    AuthenticationServices.enableTwoSetupVerification);
+    AuthenticationServices.changeTwoSetupVerification);
 
 router.patch("/verify-enable-two-setup-verification",
     authenticationMiddeware(),
@@ -60,9 +76,7 @@ router.patch("/verify-enable-two-setup-verification",
     AuthenticationServices.verifyEnableTwoSetupVerification);
 
 
-router.post("/login/verify-otp-code",
-    validationMiddleware(authValidators.verifyLoginOTPCode),
-    AuthenticationServices.verifyLoginOTPCode);
+
 
 
 

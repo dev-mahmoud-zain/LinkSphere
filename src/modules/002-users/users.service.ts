@@ -22,10 +22,12 @@ class UserServise {
     private usermodel = new UserRepository(UserModel)
     constructor() { }
 
+// ============================ Profile Management =============================
+
     profile = async (req: Request, res: Response): Promise<Response> => {
 
 
-        const { password, ...safeUser } = req.user?.toObject() as HUserDoucment;
+        const { password, twoSetupVerificationCode, twoSetupVerificationCodeExpiresAt, ...safeUser } = req.user?.toObject() as HUserDoucment;
 
         if (safeUser.picture) {
             const key = await getPreSigndUrl({ Key: safeUser.picture });
@@ -40,44 +42,14 @@ class UserServise {
             safeUser.coverImages = keys;
         }
 
+
         return succsesResponse({
             res,
-            data: { safeUser }
+            data: safeUser
         })
 
     }
 
-    changePassword = async (req: Request, res: Response): Promise<Response> => {
-
-
-        const { _id, email, password } = req.user as HUserDoucment;
-        const { oldPassword, newPassword }: IChangePassword = req.body
-
-
-        if (!await compareHash(oldPassword, password)) {
-            throw new BadRequestException("Invalid Old Password")
-        }
-
-        const OTPCode = generateOTP();
-        emailEvent.emit("changePassword", { to: email, OTPCode })
-
-
-        await this.usermodel.updateOne({
-            _id
-        }, {
-            password: await generateHash(newPassword)
-        })
-
-
-
-        return succsesResponse({
-            res,
-            info: "Your Password Changed Succses"
-        })
-
-
-
-    }
 
     uploadProfilePicture = async (req: Request, res: Response): Promise<Response> => {
 
@@ -107,6 +79,31 @@ class UserServise {
 
     }
 
+    uploadCoverImages = async (req: Request, res: Response): Promise<Response> => {
+
+        const { _id } = req.tokenDecoded as JwtPayload
+
+        if (!req.files?.length) {
+            throw new BadRequestException("No files uploaded")
+        }
+
+        const keys = await uploadFiles({
+            files: req.files as Express.Multer.File[],
+            path: `users/${req.tokenDecoded?._id}/cover`
+        })
+
+        await this.usermodel.updateOne({ _id }, {
+            coverImages: keys
+        })
+
+        return succsesResponse({
+            res,
+            info: "Profile Picture Uploaded Succses",
+            data: { keys }
+        })
+
+    }
+
     deleteProfilePicture = async (req: Request, res: Response): Promise<Response> => {
 
         const { _id } = req.tokenDecoded as JwtPayload
@@ -129,33 +126,6 @@ class UserServise {
         return succsesResponse({
             res,
             info: "Profile Picture Deleted Succses",
-        })
-
-
-
-    }
-
-    uploadCoverImages = async (req: Request, res: Response): Promise<Response> => {
-
-        const { _id } = req.tokenDecoded as JwtPayload
-
-        if (!req.files?.length) {
-            throw new BadRequestException("No files uploaded")
-        }
-
-        const keys = await uploadFiles({
-            files: req.files as Express.Multer.File[],
-            path: `users/${req.tokenDecoded?._id}/cover`
-        })
-
-        await this.usermodel.updateOne({ _id }, {
-            coverImages: keys
-        })
-
-        return succsesResponse({
-            res,
-            info: "Profile Picture Uploaded Succses",
-            data: { keys }
         })
 
 
@@ -188,73 +158,7 @@ class UserServise {
 
     }
 
-    freezAccount = async (req: Request, res: Response): Promise<Response> => {
-
-        const adminId = req.tokenDecoded?._id;
-        let { userId } = req.params;
-
-        if (!userId) {
-            // لنفسه Freez  يعمل 
-            userId = adminId;
-        }
-
-        const freezedAccount = await this.usermodel.updateOne({
-            _id: userId,
-            freezedAt: { $exists: false },
-            freezedBy: { $exists: false },
-        }, {
-            $set: {
-                freezedAt: new Date(),
-                freezedBy: adminId,
-                changeCredentialsTime: new Date()
-            },
-            $unset: {
-                restoredAt: 1,
-                restoredBy: 1
-            }
-        })
-
-        if (!freezedAccount) {
-            throw new BadRequestException("Faild To Freez Account")
-        }
-
-        return succsesResponse({
-            res,
-            info: "Account Freezed Succses",
-        })
-
-
-    }
-
-    deleteAccount = async (req: Request, res: Response): Promise<Response> => {
-
-        const { userId } = req.params;
-
-        const user = await this.usermodel.findOne({ filter: { _id: userId } });
-
-
-        if (!user) {
-            throw new NotFoundException("User Not Found")
-        }
-
-        if (!user.freezedAt) {
-            throw new BadRequestException("Cannot Delete Not Freezed Account");
-        }
-
-        const deletedUser = await this.usermodel.deleteOne({ _id: userId });
-
-        if (!deletedUser.deletedCount) {
-            throw new BadRequestException("Faild To Delete User")
-        }
-
-        await deleteFolderByPrefix({ path: `users/${user._id}` });
-
-        return succsesResponse({
-            res,
-            info: "Account Deleted Succses",
-        })
-
-    }
+// ========================= User Information Updates ==========================
 
     updateBasicInfo = async (req: Request, res: Response): Promise<Response> => {
 
@@ -399,6 +303,108 @@ class UserServise {
         return succsesResponse({
             res,
             info: "Verify Your Email",
+        })
+
+    }
+
+    changePassword = async (req: Request, res: Response): Promise<Response> => {
+
+
+        const { _id, email, password } = req.user as HUserDoucment;
+        const { oldPassword, newPassword }: IChangePassword = req.body
+
+
+        if (!await compareHash(oldPassword, password)) {
+            throw new BadRequestException("Invalid Old Password")
+        }
+
+        const OTPCode = generateOTP();
+        emailEvent.emit("changePassword", { to: email, OTPCode })
+
+
+        await this.usermodel.updateOne({
+            _id
+        }, {
+            password: await generateHash(newPassword)
+        })
+
+
+
+        return succsesResponse({
+            res,
+            info: "Your Password Changed Succses"
+        })
+
+
+
+    }
+
+// ============================= Account Control ===============================
+
+    freezAccount = async (req: Request, res: Response): Promise<Response> => {
+
+        const adminId = req.tokenDecoded?._id;
+        let { userId } = req.params;
+
+        if (!userId) {
+            // لنفسه Freez  يعمل 
+            userId = adminId;
+        }
+
+        const freezedAccount = await this.usermodel.updateOne({
+            _id: userId,
+            freezedAt: { $exists: false },
+            freezedBy: { $exists: false },
+        }, {
+            $set: {
+                freezedAt: new Date(),
+                freezedBy: adminId,
+                changeCredentialsTime: new Date()
+            },
+            $unset: {
+                restoredAt: 1,
+                restoredBy: 1
+            }
+        })
+
+        if (!freezedAccount) {
+            throw new BadRequestException("Faild To Freez Account")
+        }
+
+        return succsesResponse({
+            res,
+            info: "Account Freezed Succses",
+        })
+
+
+    }
+
+    deleteAccount = async (req: Request, res: Response): Promise<Response> => {
+
+        const { userId } = req.params;
+
+        const user = await this.usermodel.findOne({ filter: { _id: userId } });
+
+
+        if (!user) {
+            throw new NotFoundException("User Not Found")
+        }
+
+        if (!user.freezedAt) {
+            throw new BadRequestException("Cannot Delete Not Freezed Account");
+        }
+
+        const deletedUser = await this.usermodel.deleteOne({ _id: userId });
+
+        if (!deletedUser.deletedCount) {
+            throw new BadRequestException("Faild To Delete User")
+        }
+
+        await deleteFolderByPrefix({ path: `users/${user._id}` });
+
+        return succsesResponse({
+            res,
+            info: "Account Deleted Succses",
         })
 
     }

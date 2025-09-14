@@ -1,7 +1,7 @@
 import EventEmitter from 'node:events';
 import { sendEmail } from './sendEmail.js';
 import Mail from 'nodemailer/lib/mailer/index.js';
-import { confirmEmailTemplate, enableTwoStepVerificationTemplate, forgetPasswordTemplate, loginTwoStepVerificationTemplate, mentionNotificationTemplate, passwordChangedTemplate, updateEmailTemplate } from './email.template.js';
+import { confirmEmailTemplate, disableTwoStepVerificationTemplate, enableTwoStepVerificationTemplate, forgetPasswordTemplate, loginTwoStepVerificationTemplate, mentionNotificationTemplate, passwordChangedTemplate, updateEmailTemplate } from './email.template.js';
 import { ApplicationException } from '../response/error.response.js';
 
 export const emailEvent = new EventEmitter();
@@ -53,7 +53,7 @@ emailEvent.on("enableTwoStepVerification", async (data: IEmailData) => {
 
 emailEvent.on("disableTwoStepVerification", async (data: IEmailData) => {
     try {
-        data.html = await enableTwoStepVerificationTemplate({ OTPCode: data.OTPCode });
+        data.html = await disableTwoStepVerificationTemplate({ OTPCode: data.OTPCode });
         data.subject = "Disable Two-Step Verification – Confirmation Needed";
         await sendEmail(data);
     } catch (error) {
