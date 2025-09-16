@@ -1,12 +1,33 @@
 import { Request, Response } from "express";
 import { succsesResponse } from "../../utils/response/succses.response";
 import { PostRepository, UserRepository } from "../../DataBase/repository";
-import { PostModel } from "../../DataBase/models/post.model";
+import { AvailabilityEnum, PostModel } from "../../DataBase/models/post.model";
 import { UserModel } from "../../DataBase/models/user.model";
 import { BadRequestException, NotFoundException } from "../../utils/response/error.response";
 import { I_CreatePostInputs } from "./dto/posts.dto";
 import { v4 as uuid } from "uuid";
 import { deleteFiles, uploadFiles } from "../../utils/multer/s3.config";
+import { Types } from "mongoose";
+
+
+
+
+export const postAvailability = (req: Request) => {
+    return [
+        { availability: AvailabilityEnum.public },
+        { availability: AvailabilityEnum.onlyMe, createdBy: req.user?._id },
+        {
+            availability: AvailabilityEnum.friends,
+            createdBy: { $in: [...(req.user?.friends || []), req.user?._id] }
+        },
+        {
+            availability: { $ne: AvailabilityEnum.onlyMe },
+            tags: { $in: req.user?._id }
+        }
+    ]
+}
+
+
 export class PostService {
 
     private postModel = new PostRepository(PostModel);
@@ -14,7 +35,7 @@ export class PostService {
 
     constructor() { }
 
-    createPotst = async (req: Request, res: Response): Promise<Response> => {
+    createPost = async (req: Request, res: Response): Promise<Response> => {
         const { tags, attachments }: I_CreatePostInputs = req.body;
         const userId = req.tokenDecoded?._id;
 
@@ -68,6 +89,88 @@ export class PostService {
     }
 
 
+    updatePost = async (req: Request, res: Response): Promise<Response> => {
+
+        const postId = req.params.postId as unknown as { postId: Types.ObjectId };
+        const userId = req.tokenDecoded?._id;
+
+        const post = await this.postModel.findOne({
+            filter: {
+                _id: postId,
+                createdBy: userId
+            }
+        })
+
+        if (!post) {
+            throw new NotFoundException("Post Not Found");
+        }
+
+        // First Wrong Resolve 
+        // if (req.body.removedAttachments?.length && post.attachments?.length) {
+        //     post.attachments = post.attachments.filter((attachment: string) => {
+        //         if (!req.body.removedAttachments.includes(attachment)) {
+        //             return attachment
+        //         }
+        //         return
+        //     })
+        // }
+
+
+        let attachmentsKeys: string[] = [];
+        if (req.body.attachments?.length) {
+            attachmentsKeys = await uploadFiles({
+                files: req.files as Express.Multer.File[],
+                path: `users/${userId}/posts/${post.assetsFolderId}`
+            });
+
+            // post.attachments = [...(post.attachments || []), ...attachmentsKeys]; 
+
+        }
+
+        const updatedPost = await this.postModel.updateOne({
+            _id: postId,
+        }, [
+            {
+                $set: {
+                    content: req.body.content || post.content,
+                    allowComments: req.body.allowComments || post.allowComments,
+                    availability: req.body.availability || post.availability,
+                    attachments: {
+                        $setUnion: [
+                            {
+                                $setDifference: ["$attachments", req.body.removedAttachments || []],
+                            },
+                            attachmentsKeys
+                        ]
+                    }
+
+                }
+            }
+        ])
+
+        if (!updatedPost) {
+            if (attachmentsKeys.length) {
+                await deleteFiles({ urls: attachmentsKeys })
+            }
+            throw new BadRequestException("Fail To Update Post")
+        }
+
+        else {
+            if (req.body.attachments) {
+                await deleteFiles({ urls: req.body.removedAttachments });
+            }
+        }
+
+        return succsesResponse({
+            res, statusCode: 200,
+            info: "Post Updated Succses", data: {
+                updatedPost
+            }
+        });
+
+    }
+
+
     getPost = async (req: Request, res: Response): Promise<Response> => {
         const { postId } = req.params;
 
@@ -96,8 +199,9 @@ export class PostService {
 
         const post = await this.postModel.findOne({
             filter: {
-                _id: postId
-            }, select: { likes: 1, _id: 0 }
+                _id: postId,
+                $or: postAvailability(req)
+            }
         });
 
         if (!post) {
@@ -126,7 +230,5 @@ export class PostService {
             message
         });
     }
-
-
 
 }

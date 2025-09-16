@@ -24,7 +24,9 @@ export interface IPost {
     attachments?: string[];
     assetsFolderId: string;
 
-    availability: AvailabilityEnum;
+    availability?: AvailabilityEnum;
+    except? :Types.ObjectId[];
+    only? : Types.ObjectId[];
     allowComments: AllowCommentsEnum;
 
     tags?: Types.ObjectId[];
@@ -59,6 +61,9 @@ const postSchima = new Schema<IPost>({
     assetsFolderId: { type: String, required: true },
 
     availability: { type: String, enum: AvailabilityEnum, default: AvailabilityEnum.public },
+    except : [{ type: [Schema.Types.ObjectId], ref: "User" }],
+    only :[{ type: [Schema.Types.ObjectId], ref: "User" }],
+    
     allowComments: { type: String, enum: AllowCommentsEnum, default: AllowCommentsEnum.allow },
 
     tags: { type: [Schema.Types.ObjectId], ref: "User" },

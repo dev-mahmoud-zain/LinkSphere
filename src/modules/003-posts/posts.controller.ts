@@ -13,7 +13,13 @@ router.post("/create-post",
     authenticationMiddeware(),
     cloudFileUpload({ validation: fileValidation.image, storageApproach: StorageEnum.disk }).array("attachments", 2),
     validationMiddleware(validation.createPost),
-    postService.createPotst);
+    postService.createPost);
+
+router.patch("/update-post/{:postId}",
+    authenticationMiddeware(),
+    cloudFileUpload({ validation: fileValidation.image, storageApproach: StorageEnum.disk }).array("attachments", 2),
+    validationMiddleware(validation.updatePost),
+    postService.updatePost);
 
 router.get("/{:postId}",
     // authenticationMiddeware(), مؤقتاً بس عشان نشوفها من الميل
@@ -21,7 +27,7 @@ router.get("/{:postId}",
     postService.getPost);
 
 router.post("/like/{:postId}",
-    authenticationMiddeware(), 
+    authenticationMiddeware(),
     validationMiddleware(validation.likePost),
     postService.likePost);
 

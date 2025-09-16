@@ -30,7 +30,6 @@ class AuthenticationServices {
     constructor() { }
 
 
-
     // ================= Account Registration & Email Verification =================
 
     signup = async (req: Request, res: Response): Promise<Response> => {

@@ -73,6 +73,8 @@ export interface IUser {
     twoSetupVerification: TwoSetupVerificationEnum;
     twoSetupVerificationCode?: string;
     twoSetupVerificationCodeExpiresAt?: Date;
+
+    friends? : Schema.Types.ObjectId[];
 }
 
 const userSchema = new Schema<IUser>({
@@ -125,6 +127,8 @@ const userSchema = new Schema<IUser>({
     twoSetupVerification: { type: String, enum: TwoSetupVerificationEnum, default: TwoSetupVerificationEnum.disable },
     twoSetupVerificationCode: { type: String },
     twoSetupVerificationCodeExpiresAt: { type: Date },
+
+    friends : [{type:Schema.Types.ObjectId , ref:"User"}],
 },
     {
         strictQuery: true,

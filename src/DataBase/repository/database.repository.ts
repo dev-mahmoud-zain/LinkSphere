@@ -8,9 +8,11 @@ import {
     ProjectionType,
     QueryOptions,
     RootFilterQuery,
-    UpdateQuery
+    UpdateQuery,
+    UpdateWriteOpResult
 } from "mongoose";
 import { NotFoundException } from "../../utils/response/error.response";
+import { MongooseUpdateQueryOptions } from "mongoose";
 
 export abstract class DataBaseRepository<TDocument> {
     constructor(protected readonly model: Model<TDocument>) { }
@@ -84,23 +86,36 @@ export abstract class DataBaseRepository<TDocument> {
     async updateOne(
         filter: FilterQuery<TDocument>,
         updateData: UpdateQuery<TDocument>,
-        options: QueryOptions = { new: true }
-    ): Promise<HydratedDocument<TDocument>> {
+        options?: MongooseUpdateQueryOptions<TDocument> | null
+    ): Promise<UpdateWriteOpResult> {
 
-        const updatedDoc = await this.model.findOneAndUpdate(
-            filter,
+        if (Array.isArray(updateData)) {
+
+            updateData.push({
+                $set: {
+                    __v: { $add: ["$__v", 1] }
+                },
+            })
+
+            return await this.model.updateOne(
+                filter || {},
+                updateData,
+                options
+            );
+
+        }
+
+        return await this.model.updateOne(
+            filter || {},
             {
                 ...updateData,
                 $inc: { __v: 1 }
             },
             options
-        ).exec();
+        );
 
-        if (!updatedDoc) {
-            throw new NotFoundException("Document not found");
-        }
 
-        return updatedDoc;
+
     }
 
     async findOneAndUpdate(
@@ -110,9 +125,9 @@ export abstract class DataBaseRepository<TDocument> {
             options
         }: {
             filter?: RootFilterQuery<TDocument>,
-            updateData: UpdateQuery<TDocument> ,
+            updateData: UpdateQuery<TDocument>,
             options?: QueryOptions<TDocument> | null
-        }): Promise< HydratedDocument<TDocument>
+        }): Promise<HydratedDocument<TDocument>
             | null> {
 
         const updatedDoc = await this.model.findOneAndUpdate(
