@@ -9,7 +9,7 @@ import {
     uploadFiles
 } from "../../utils/multer/s3.config";
 import { ApplicationException, BadRequestException, NotFoundException } from "../../utils/response/error.response";
-import { UserRepository } from "../../DataBase/repository/user.repository";
+import { UserRepository } from "../../DataBase/repository";
 import { JwtPayload } from "jsonwebtoken";
 import { succsesResponse } from "../../utils/response/succses.response";
 import { IChangePassword } from "../001-auth/dto/auth.dto";

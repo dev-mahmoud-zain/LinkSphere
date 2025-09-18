@@ -60,6 +60,7 @@ export abstract class DataBaseRepository<TDocument> {
         limit?: number,
         sort?: Record<string, 1 | -1>
     }) {
+
         const skip = (page - 1) * limit;
 
         const [data, total] = await Promise.all([
@@ -75,10 +76,10 @@ export abstract class DataBaseRepository<TDocument> {
         return {
             data,
             pagination: {
-                total,
                 page,
+                totalPages: Math.ceil(total / limit),
                 limit,
-                totalPages: Math.ceil(total / limit)
+                totalPosts: total
             }
         };
     }
@@ -114,8 +115,6 @@ export abstract class DataBaseRepository<TDocument> {
             options
         );
 
-
-
     }
 
     async findOneAndUpdate(
@@ -127,8 +126,7 @@ export abstract class DataBaseRepository<TDocument> {
             filter?: RootFilterQuery<TDocument>,
             updateData: UpdateQuery<TDocument>,
             options?: QueryOptions<TDocument> | null
-        }): Promise<HydratedDocument<TDocument>
-            | null> {
+        }): Promise<HydratedDocument<TDocument>> {
 
         const updatedDoc = await this.model.findOneAndUpdate(
             filter,

@@ -27,7 +27,7 @@ export const validationMiddleware = (schima: SchimaType) => {
             if (!schima[key]) continue;
 
             if (req.file) {
-                req.body.attachments = req.file;
+                req.body.attachment = req.file;
             }
 
             if (req.files) {

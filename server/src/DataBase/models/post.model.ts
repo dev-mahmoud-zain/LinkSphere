@@ -25,8 +25,8 @@ export interface IPost {
     assetsFolderId: string;
 
     availability?: AvailabilityEnum;
-    except? :Types.ObjectId[];
-    only? : Types.ObjectId[];
+    except?: Types.ObjectId[];
+    only?: Types.ObjectId[];
     allowComments: AllowCommentsEnum;
 
     tags?: Types.ObjectId[];
@@ -61,9 +61,9 @@ const postSchima = new Schema<IPost>({
     assetsFolderId: { type: String, required: true },
 
     availability: { type: String, enum: AvailabilityEnum, default: AvailabilityEnum.public },
-    except : [{ type: [Schema.Types.ObjectId], ref: "User" }],
-    only :[{ type: [Schema.Types.ObjectId], ref: "User" }],
-    
+    except: [{ type: [Schema.Types.ObjectId], ref: "User" }],
+    only: [{ type: [Schema.Types.ObjectId], ref: "User" }],
+
     allowComments: { type: String, enum: AllowCommentsEnum, default: AllowCommentsEnum.allow },
 
     tags: { type: [Schema.Types.ObjectId], ref: "User" },
@@ -98,13 +98,15 @@ postSchima.pre("save",
 postSchima.post("save",
     async function (this: HPostDucment & { _tags?: Types.ObjectId[], _postId: Types.ObjectId, _createdBy: Types.ObjectId }) {
 
-        let users: Array<HUserDoucment> = [];
+        let users: HUserDoucment[] = [];
+
         if (this._tags?.length) {
             const result = await userModel.find({
                 filter: { _id: { $in: this._tags } }
             });
-            users = result.data as Array<HUserDoucment>;
+            users = result.data as HUserDoucment[];
         }
+
 
         if (users.length) {
             const postLink = `${process.env.BASE_URL}/posts/${this._postId}`
@@ -112,7 +114,6 @@ postSchima.post("save",
             const mentionedBy = await userModel.findOne({
                 filter: { _id: this._createdBy }
             });
-
 
             for (const user of users) {
                 emailEvent.emit("mentionedInPost", { to: user.email, postLink, mentionedBy: mentionedBy?.userName });

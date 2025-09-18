@@ -208,10 +208,6 @@ userSchema.pre(["updateOne", "findOne", "find"], function (next) {
 
 
 
-
-
-
-
 export const UserModel = models.User || model<IUser>("User", userSchema);
 
 export type HUserDoucment = HydratedDocument<IUser>;

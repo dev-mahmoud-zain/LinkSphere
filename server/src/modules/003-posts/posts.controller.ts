@@ -4,10 +4,13 @@ import { authenticationMiddeware } from "../../middlewares/authentication.middle
 import { cloudFileUpload, fileValidation, StorageEnum } from "../../utils/multer/cloud.,multer";
 import { validationMiddleware } from "../../middlewares/validation.middleware";
 import *  as  validation from "./posts.validation";
+import { router as commentsRouter } from "../004-comments/index"
 
 const postService = new PostService();
 
 const router = Router();
+
+router.use("/:postId/", commentsRouter)
 
 router.post("/create-post",
     authenticationMiddeware(),
@@ -20,6 +23,11 @@ router.patch("/update-post/{:postId}",
     cloudFileUpload({ validation: fileValidation.image, storageApproach: StorageEnum.disk }).array("attachments", 2),
     validationMiddleware(validation.updatePost),
     postService.updatePost);
+
+router.get("/",
+    authenticationMiddeware(),
+    validationMiddleware(validation.getPosts),
+    postService.getPosts);
 
 router.get("/{:postId}",
     // authenticationMiddeware(), مؤقتاً بس عشان نشوفها من الميل

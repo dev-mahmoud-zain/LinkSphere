@@ -10,7 +10,6 @@ import type {
     IResendForgetPasswordOTP,
     ISignupWithGmail
 } from "./dto/auth.dto";
-import { HUserDoucment, ProviderEnum, TwoSetupVerificationEnum, UserModel } from "../../DataBase/models/user.model";
 import { ApplicationException, BadRequestException, ConflictException, NotFoundException } from "../../utils/response/error.response";
 import { compareHash, generateHash } from "../../utils/security/hash.security";
 import { emailEvent } from "../../utils/email/email.events";
@@ -21,6 +20,9 @@ import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { UpdateQuery } from "mongoose";
 import { succsesResponse } from "../../utils/response/succses.response";
 import { UserRepository } from "../../DataBase/repository";
+import { UserModel, HUserDoucment, ProviderEnum, TwoSetupVerificationEnum } from "../../DataBase/models";
+
+
 
 class AuthenticationServices {
 
@@ -42,10 +44,12 @@ class AuthenticationServices {
         })
 
         if (userExsist) {
-            throw new ConflictException("Email Alredy Exsists Try To Login", {issues:{
-                path:"email",
-                value:email
-            }})
+            throw new ConflictException("Email Alredy Exsists Try To Login", {
+                issues: {
+                    path: "email",
+                    value: email
+                }
+            })
         }
 
         const OTPCode = generateOTP();
@@ -159,14 +163,19 @@ class AuthenticationServices {
 
             // نفك البلوك عشان الوقت خلص
             else {
-                user = await this.userModel.updateOne({ email }, {
-                    $unset: { otpBlockExpiresAt: 1 },
-                    OTPReSendCount: 0
+
+                user = await this.userModel.findOneAndUpdate({
+                    filter: { email },
+                    updateData: {
+                        $unset: { otpBlockExpiresAt: 1 },
+                        OTPReSendCount: 0
+                    }
                 })
             }
         }
 
         const OTPCode: string = generateOTP();
+
         await this.userModel.updateOne({ email }, {
             OTPReSendCount: user.OTPReSendCount ? user.OTPReSendCount + 1 : 1,
             confirmEmailOTP: await generateHash(OTPCode),
@@ -274,7 +283,7 @@ class AuthenticationServices {
     }
 
     // ======================== Login & Session Management =========================
-    
+
     login = async (req: Request, res: Response): Promise<Response> => {
 
         const { email, password }: I_loginBodyInputs = req.body.validData;
@@ -573,12 +582,15 @@ class AuthenticationServices {
 
         const { email, newPassword }: IChangeForgetPassword = req.body.validData;
 
-        const user = await this.userModel.updateOne({ email },
-            {
+        const user = await this.userModel.findOneAndUpdate({
+            filter: { email },
+            updateData: {
                 password: await generateHash(newPassword),
                 changeCredentialsTime: new Date,
                 $unset: { forgetPasswordCount: 1, forgetPasswordOTP: 1, forgetPasswordOTPExpiresAt: 1 }
             }
+        }
+
         )
 
         if (!user) {

@@ -37,8 +37,6 @@ export const createPost = {
     })
 }
 
-
-
 export const updatePost = {
 
 
@@ -98,6 +96,12 @@ export const getPost = {
     })
 }
 
+export const getPosts = {
+    query: z.strictObject({
+        page: z.coerce.number().positive().min(1).max(10).optional(),
+        limit : z.coerce.number().positive().min(1).max(50).optional()
+    })
+}
 
 export const likePost = {
     params: getPost.params.extend({})
