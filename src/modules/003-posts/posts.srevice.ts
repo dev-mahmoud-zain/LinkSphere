@@ -484,13 +484,37 @@ export class PostService {
     // GQL 
 
 
-    allPosts = async (args: { page: number, limit: number }) => {
+    allPosts = async (args: { page: number, limit: number }, user: any) => {
 
         const posts = await this.postModel.find({
-            filter: {},
+            filter: {
+                $or: [
+                    { availability: AvailabilityEnum.public },
+                    { availability: AvailabilityEnum.onlyMe, createdBy: user._id },
+                    {
+                        availability: AvailabilityEnum.friends,
+                        createdBy: { $in: [...(user?.friends || []), user._id] }
+                    },
+                    {
+                        availability: { $ne: AvailabilityEnum.onlyMe },
+                        tags: { $in: user?._id }
+                    }
+                ]
+            },
+            options: {
+                populate: [{
+                    path: "comments",
+                    match: { flag: CommentFlagEnum.comment },
+                    options: {
+                        sort: { createdAt: -1 },
+                        select: "-id",
+                    }
+                }
+                ]
+            },
             limit: args.limit,
             page: args.page
-        })
+        });
 
         return {
             count: posts.data.length,
@@ -501,7 +525,7 @@ export class PostService {
     }
 
 
-    searchForPost = async (args: { key:string, page: number, limit: number }) => {
+    searchForPost = async (args: { key: string, page: number, limit: number }) => {
 
         const posts = await this.postModel.find({
             filter: {

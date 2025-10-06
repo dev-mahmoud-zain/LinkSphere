@@ -20,6 +20,8 @@ import { createHandler } from "graphql-http/lib/use/express"
 import { GQLSchema } from "./modules/graphql";
 import { authenticationMiddleware } from "./middlewares/authentication.middleware";
 
+import morgan from "morgan";
+
 // App Start Point
 export default async function bootstrap(): Promise<void> {
 
@@ -35,22 +37,30 @@ export default async function bootstrap(): Promise<void> {
     });
     app.set('trust proxy', 1);
 
+
     app.use(
         cors({
-            origin: "http://localhost:4200",
+            origin: [
+                "http://localhost:4200",
+                "https://link-sphere-mauve.vercel.app"
+            ],
             credentials: true,
-        }),
-        helmet(),
-        express.json(),
-        limiter
+        })
     );
+
+
+    app.use(helmet());
+    app.use(express.json());
+    app.use(limiter);
+    app.use(morgan("dev"));
 
     // DataBase
     await connectToDataBase();
 
     // Application Routing 
 
-    app.all("/graphql", authenticationMiddleware(), createHandler({ schema: GQLSchema, context: (req) => ({ user: req.raw.user }) }))
+    app.all("/graphql", authenticationMiddleware(),
+        createHandler({ schema: GQLSchema, context: (req) => ({ user: req.raw.user }) }))
 
     // Main Router
     app.get("/", (req: Request, res: Response): Response => {

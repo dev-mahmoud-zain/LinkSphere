@@ -91,7 +91,12 @@ postSchima.virtual("lastComment",{
     foreignField:"postId",
     ref:"Comment",
     justOne:true,
-    
+})
+
+postSchima.virtual("comments",{
+    localField:"_id",
+    foreignField:"postId",
+    ref:"Comment",
 })
 
 postSchima.pre("save",
