@@ -107,7 +107,7 @@ export const passwordChangedTemplate = async (): Promise<string> => {
     <h2 style="color: #2ecc71; margin-bottom: 10px;">🔐 Password Changed Successfully</h2>
     
     <p style="font-size: 16px; line-height: 1.6; margin: 0 0 15px;">
-        Your password for <strong style="color:#4a90e2;">LinkSphere</strong> has been updated successfully.
+        Your password for <strong style="color:#4a90e2;">LinkSphere</strong> has been updated Successfully.
     </p>
     
     <p style="font-size: 15px; line-height: 1.6; margin: 0 0 20px; color: #555;">

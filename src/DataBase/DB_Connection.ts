@@ -9,7 +9,7 @@ const connectToDataBase = async (): Promise<void> => {
         
         UserModel.syncIndexes();
 
-        console.log("DataBase Connected Succses");
+        console.log("DataBase Connected Success");
     } catch (error) {
         console.log("\nX X X X X X X X X X X X X X X X X X X X X X X");
         console.log("Faild To Connect DataBase");

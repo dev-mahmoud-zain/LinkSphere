@@ -32,8 +32,8 @@ export interface IPost {
     tags?: Types.ObjectId[];
     likes?: Types.ObjectId[];
 
-    freezedAt?: Date;
-    freezedBy?: Types.ObjectId;
+    freezeedAt?: Date;
+    freezeedBy?: Types.ObjectId;
 
     restoredAt?: Date;
     restoredBy?: Types.ObjectId;
@@ -69,8 +69,8 @@ const postSchima = new Schema<IPost>({
     tags: { type: [Schema.Types.ObjectId], ref: "User" },
     likes: { type: [Schema.Types.ObjectId], ref: "User" },
 
-    freezedAt: Date,
-    freezedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    freezeedAt: Date,
+    freezeedBy: { type: Schema.Types.ObjectId, ref: "User" },
 
     restoredAt: Date,
     restoredBy: { type: Schema.Types.ObjectId, ref: "User" },
@@ -81,23 +81,31 @@ const postSchima = new Schema<IPost>({
 }, {
     timestamps: true,
     strictQuery: true,
-    toJSON:{virtuals:true},
-    toObject:{virtuals:true}
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
 
 
-postSchima.virtual("lastComment",{
-    localField:"_id",
-    foreignField:"postId",
-    ref:"Comment",
-    justOne:true,
+postSchima.virtual("author", {
+    localField: "createdBy",
+    foreignField: "_id",
+    ref: "User",
+    justOne: true
 })
 
-postSchima.virtual("comments",{
-    localField:"_id",
-    foreignField:"postId",
-    ref:"Comment",
+postSchima.virtual("lastComment", {
+    localField: "_id",
+    foreignField: "postId",
+    ref: "Comment",
+    justOne: true,
 })
+
+postSchima.virtual("comments", {
+    localField: "_id",
+    foreignField: "postId",
+    ref: "Comment",
+})
+
 
 postSchima.pre("save",
 
@@ -146,7 +154,7 @@ postSchima.pre(["updateOne", "findOne", "find"], function (next) {
         this.setQuery({ ...query });
     }
     else {
-        this.setQuery({ ...query, freezedAt: { $exists: false } });
+        this.setQuery({ ...query, freezeedAt: { $exists: false } });
     }
     next()
 });

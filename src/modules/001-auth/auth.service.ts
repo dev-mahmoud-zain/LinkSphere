@@ -18,7 +18,7 @@ import { LogoutFlagEnum, TokenService } from "../../utils/security/token.securit
 import { JwtPayload } from "jsonwebtoken";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { UpdateQuery } from "mongoose";
-import { successResponse } from "../../utils/response/success.response";
+import { successResponse } from "../../utils/response/Success.response";
 import { UserRepository } from "../../DataBase/repository";
 import { UserModel, HUserDocument, ProviderEnum, TwoSetupVerificationEnum } from "../../DataBase/models";
 
@@ -121,7 +121,7 @@ class AuthenticationServices {
 
         return successResponse({
             res,
-            info: "Email Confirmed Succses",
+            info: "Email Confirmed Success",
         })
 
     }
@@ -188,7 +188,7 @@ class AuthenticationServices {
         return successResponse({
             res,
             statusCode: 200,
-            info: "Email Confirmed Succses"
+            info: "Email Confirmed Success"
         })
 
 
@@ -231,7 +231,7 @@ class AuthenticationServices {
 
         return successResponse({
             res,
-            info: "login Succses",
+            info: "login Success",
             data: { credentials }
         })
 
@@ -275,7 +275,7 @@ class AuthenticationServices {
 
         return successResponse({
             res,
-            info: "Signup Succses",
+            info: "Signup Success",
             data: { credentials }
         })
 
@@ -303,7 +303,7 @@ class AuthenticationServices {
             throw new BadRequestException("Confirm Your Email To Login")
         }
 
-        if (user.freezedAt) {
+        if (user.freezeedAt) {
             throw new NotFoundException("User Not Found")
         }
 
@@ -336,7 +336,7 @@ class AuthenticationServices {
 
         return successResponse({
             res,
-            info: "Login Succses",
+            info: "Login Success",
             data: { credentials }
         })
 
@@ -379,7 +379,7 @@ class AuthenticationServices {
 
         return successResponse({
             res,
-            info: "Login Succses",
+            info: "Login Success",
             data: { credentials }
         })
 
@@ -410,7 +410,7 @@ class AuthenticationServices {
 
         return successResponse({
             res,
-            info: "Logout Succses",
+            info: "Logout Success",
         })
 
     }
@@ -430,7 +430,7 @@ class AuthenticationServices {
 
 
     // =================== Password Reset (Forget Password Flow) ===================
-    frogetPassword = async (req: Request, res: Response): Promise<Response> => {
+    forgetPassword = async (req: Request, res: Response): Promise<Response> => {
 
         const { email }: IForgetPassword = req.body.validData;
         const user = await this.userModel.findOne({
@@ -601,7 +601,7 @@ class AuthenticationServices {
 
         return successResponse({
             res,
-            info: "Your Password Changed Succses",
+            info: "Your Password Changed Success",
             data: { credentials }
         })
 
@@ -679,8 +679,8 @@ class AuthenticationServices {
 
         const info =
             action === TwoSetupVerificationEnum.enable ?
-                "Tow Setup Verification Is Enabled Succses" :
-                "Tow Setup Verification Is Disabled Succses";
+                "Tow Setup Verification Is Enabled Success" :
+                "Tow Setup Verification Is Disabled Success";
 
         return successResponse({
             res,

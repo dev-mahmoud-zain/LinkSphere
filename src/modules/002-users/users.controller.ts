@@ -15,7 +15,7 @@ router.get("/profile",
     authenticationMiddleware(),
     usersService.profile);
 
-router.get("/:userId",
+router.get("/user/:userId",
     authenticationMiddleware(),
     usersService.getUserById);
 
@@ -42,17 +42,17 @@ router.delete("/profile-cover-images",
 // =========================  Friendship Management ============================
 
 
-router.post("/friend-requst/:userId",
+router.post("/friend-request/:userId",
     authenticationMiddleware(),
-    validationMiddleware(usersValidation.sendFriendRequst),
+    validationMiddleware(usersValidation.sendFriendRequest),
     usersService.sendFriendRequest);
 
-router.patch("/accept-friend-requst/:requstId",
+router.patch("/accept-friend-request/:requestId",
     authenticationMiddleware(),
     validationMiddleware(usersValidation.acceptFriendRequst),
     usersService.acceptFriendRequest);
 
-router.delete("/cancel-friend-requst/:requstId",
+router.delete("/cancel-friend-request/:requestId",
     authenticationMiddleware(),
     validationMiddleware(usersValidation.cancelFriendRequst),
     usersService.cancelFriendRequest);
@@ -62,6 +62,9 @@ router.delete("/remove-friend/:userId",
     validationMiddleware(usersValidation.removeFriend),
     usersService.removeFriend);
 
+router.get("/friend-requests",
+    authenticationMiddleware(),
+    usersService.GetFriendRequests);
 
 // ========================= User Information Updates ==========================
 
@@ -89,32 +92,24 @@ router.patch("/confirm-update-email",
 
 // ============================= Account Control ===============================
 
-
-router.delete("/freez/{:userId}",
-    authorizationMiddleware(endPoints.freezAccount),
-    validationMiddleware(usersValidation.freezAccount),
+router.delete("/freeze/{:userId}",
+    authorizationMiddleware(endPoints.freezeAccount),
+    validationMiddleware(usersValidation.freezeAccount),
     usersService.freezeAccount);
 
-router.patch("/un-freez/:userId/admin",
-    authorizationMiddleware(endPoints.unFreezAccountByAdmin),
-    validationMiddleware(usersValidation.unFreezAccountByAdmin),
-    usersService.unFreezeAccountByAdmin);
+router.patch("/un-freeze/:userId/admin",
+    authorizationMiddleware(endPoints.unfreezeAccountByAdmin),
+    validationMiddleware(usersValidation.unfreezeAccountByAdmin),
+    usersService.unfreezeAccountByAdmin);
 
-router.patch("/un-freez/me",
-    validationMiddleware(usersValidation.unFreezAccountByAccountAuther),
-    usersService.unFreezeAccountByAccountAuthor);
+router.patch("/un-freeze/me",
+    validationMiddleware(usersValidation.unfreezeAccountByAccountAuthor),
+    usersService.unfreezeAccountByAccountAuthor);
 
 router.delete("/delete/:userId",
     authorizationMiddleware(endPoints.deleteAccount),
     validationMiddleware(usersValidation.deleteAccount),
     usersService.deleteAccount);
-
-
-
-
-
-
-
 
 // ============================= Admin Control ===============================
 

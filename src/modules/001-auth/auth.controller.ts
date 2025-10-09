@@ -47,12 +47,11 @@ router.get("/refresh-token",
     authenticationMiddleware(TokenTypeEnum.refresh),
     AuthenticationServices.refreshToken);
 
-
 // =================== Password Reset (Forget Password Flow) ===================
 
 router.post("/forget-password",
     validationMiddleware(authValidators.forgetPassword),
-    AuthenticationServices.frogetPassword);
+    AuthenticationServices.forgetPassword);
 
 router.post("/resend-forget-password-otp",
     validationMiddleware(authValidators.forgetPassword),

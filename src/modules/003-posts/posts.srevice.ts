@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { successResponse } from "../../utils/response/success.response";
+import { successResponse } from "../../utils/response/Success.response";
 import { CommentRepository, PostRepository, UserRepository } from "../../DataBase/repository";
 import { AvailabilityEnum, HPostDocument, PostModel } from "../../DataBase/models/post.model";
 import { UserModel } from "../../DataBase/models/user.model";
@@ -224,7 +224,7 @@ export class PostService {
 
         return successResponse({
             res, statusCode: 200,
-            info: "Post Updated Succses"
+            info: "Post Updated Success"
         });
 
     }
@@ -241,21 +241,29 @@ export class PostService {
                 $or: postAvailability(req)
             },
             options: {
-                populate: [{
-                    path: "lastComment",
-                    match: { flag: CommentFlagEnum.comment },
-                    options: {
-                        sort: { createdAt: -1 },
-                        select: "-id"
-                    }, populate: [{
-                        path: "lastReply",
-                        match: { flag: CommentFlagEnum.reply },
+                populate: [
+                    {
+                        path: "author",
                         options: {
-                            sort: { createdAt: -1 }
-                        },
-                        select: "-id"
-                    }]
-                }
+                            sort: { createdAt: -1 },
+                            select: "firstName lastName slug email phone gender picture coverImages"
+                        }
+                    },
+                    {
+                        path: "lastComment",
+                        match: { flag: CommentFlagEnum.comment },
+                        options: {
+                            sort: { createdAt: -1 },
+                            select: "-id"
+                        }, populate: [{
+                            path: "lastReply",
+                            match: { flag: CommentFlagEnum.reply },
+                            options: {
+                                sort: { createdAt: -1 }
+                            },
+                            select: "-id"
+                        }]
+                    }
                 ]
             },
             page: page,
@@ -283,21 +291,29 @@ export class PostService {
                 $or: postAvailability(req)
             },
             options: {
-                populate: [{
-                    path: "lastComment",
-                    match: { flag: CommentFlagEnum.comment },
-                    options: {
-                        sort: { createdAt: -1 },
-                        select: "-id"
-                    }, populate: [{
-                        path: "lastReply",
-                        match: { flag: CommentFlagEnum.reply },
+                populate: [
+                    {
+                        path: "author",
                         options: {
-                            sort: { createdAt: -1 }
-                        },
-                        select: "-id"
-                    }]
-                }
+                            sort: { createdAt: -1 },
+                            select: "firstName lastName slug email phone gender picture coverImages"
+                        }
+                    },
+                    {
+                        path: "lastComment",
+                        match: { flag: CommentFlagEnum.comment },
+                        options: {
+                            sort: { createdAt: -1 },
+                            select: "-id"
+                        }, populate: [{
+                            path: "lastReply",
+                            match: { flag: CommentFlagEnum.reply },
+                            options: {
+                                sort: { createdAt: -1 }
+                            },
+                            select: "-id"
+                        }]
+                    }
                 ]
             }
         });
@@ -369,11 +385,11 @@ export class PostService {
         const post = await this.postModel.findOneAndUpdate({
             filter: {
                 _id: postId,
-                freezedAt: { $exists: false },
-                freezedBy: { $exists: false }
+                freezeedAt: { $exists: false },
+                freezeedBy: { $exists: false }
             }, updateData: {
-                freezedAt: new Date(),
-                freezedBy: userId
+                freezeedAt: new Date(),
+                freezeedBy: userId
             }
         });
 
@@ -384,19 +400,19 @@ export class PostService {
 
         await this.commentModel.updateMany({
             createdBy: userId,
-            freezedAt: { $exists: false },
-            freezedBy: { $exists: false },
+            freezeedAt: { $exists: false },
+            freezeedBy: { $exists: false },
         }, {
             $set: {
-                freezedAt: new Date(),
-                freezedBy: userId
+                freezeedAt: new Date(),
+                freezeedBy: userId
             }
         });
 
 
         return successResponse({
             res,
-            message: "Post Freezed Succses"
+            message: "Post freezeed Success"
         });
     }
 
@@ -408,8 +424,8 @@ export class PostService {
         const post = await this.postModel.findOneAndUpdate({
             filter: {
                 _id: postId,
-                freezedAt: { $exists: true },
-                freezedBy: userId,
+                freezeedAt: { $exists: true },
+                freezeedBy: userId,
                 pranoId: false
             }, updateData: {
                 $set: {
@@ -417,35 +433,35 @@ export class PostService {
                     restoredBy: userId
                 },
                 $unset: {
-                    freezedAt: "",
-                    freezedBy: ""
+                    freezeedAt: "",
+                    freezeedBy: ""
                 }
             }
         });
 
         if (!post) {
-            throw new NotFoundException("Post Not Found Or No Autherized To Unfreez");
+            throw new NotFoundException("Post Not Found Or No Autherized To Unfreeze");
         }
 
 
         await this.commentModel.updateMany({
             createdBy: userId,
-            freezedAt: { $exists: true },
-            freezedBy: { $exists: true },
+            freezeedAt: { $exists: true },
+            freezeedBy: { $exists: true },
         }, {
             $set: {
                 restoredAt: new Date(),
                 restoredBy: userId
             },
             $unset: {
-                freezedAt: "",
-                freezedBy: ""
+                freezeedAt: "",
+                freezeedBy: ""
             }
         });
 
         return successResponse({
             res,
-            message: "Post Un Freezed Succses"
+            message: "Post Un freezeed Success"
         });
     }
 
@@ -469,16 +485,16 @@ export class PostService {
             _id: postId
         })
 
-        if (post.attachments) {
+        if (post.attachments?.length && post.assetsFolderId) {
             await deleteFolderByPrefix({ path: `users/${userId}/posts/${post.assetsFolderId}` });
         }
 
+
         return successResponse({
             res,
-            message: "Post Deleted Succses"
+            message: "Post Deleted Success"
         });
     }
-
 
 
     // GQL 

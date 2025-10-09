@@ -21,7 +21,7 @@ import {
     UserRepository
 } from "../../DataBase/repository";
 import { JwtPayload } from "jsonwebtoken";
-import { successResponse } from "../../utils/response/success.response";
+import { successResponse } from "../../utils/response/Success.response";
 import { compareHash, generateHash } from "../../utils/security/hash.security";
 import { generateOTP } from "../../utils/security/OTP";
 import { emailEvent } from "../../utils/email/email.events";
@@ -40,7 +40,7 @@ export class UserService {
 
     private unfreezeUser = async (userId: Types.ObjectId, restoredBy: Types.ObjectId) => {
 
-        // Un UnFreez User
+        // Un Unfreeze User
         await this.userModel.findOneAndUpdate({
             filter: {
                 _id: userId,
@@ -50,40 +50,40 @@ export class UserService {
                     restoredBy
                 },
                 $unset: {
-                    freezedAt: "",
-                    freezedBy: ""
+                    freezeedAt: "",
+                    freezeedBy: ""
                 }
             }
         });
 
-        // UnFreez All Posts And Comments For User 
+        // Unfreeze All Posts And Comments For User 
         await this.postModel.updateMany({
             createdBy: userId,
-            freezedAt: { $exists: true },
-            freezedBy: { $exists: true },
+            freezeedAt: { $exists: true },
+            freezeedBy: { $exists: true },
         }, {
             $set: {
                 restoredAt: new Date(),
                 restoredBy
             },
             $unset: {
-                freezedAt: "",
-                freezedBy: ""
+                freezeedAt: "",
+                freezeedBy: ""
             }
         });
 
         await this.commentModel.updateMany({
             createdBy: userId,
-            freezedAt: { $exists: true },
-            freezedBy: { $exists: true },
+            freezeedAt: { $exists: true },
+            freezeedBy: { $exists: true },
         }, {
             set: {
                 restoredAt: new Date(),
                 restoredBy
             },
             $unset: {
-                freezedAt: "",
-                freezedBy: ""
+                freezeedAt: "",
+                freezeedBy: ""
             }
         });
 
@@ -180,7 +180,6 @@ export class UserService {
             userId: Types.ObjectId
         };
 
-        console.log(userId)
 
         interface IFriend {
             _id: string;
@@ -210,6 +209,8 @@ export class UserService {
                 }]
             }
         })
+
+
 
         if (!user) {
             throw new NotFoundException("Fail To Get Profile")
@@ -530,6 +531,26 @@ export class UserService {
 
     }
 
+    GetFriendRequests = async (req: Request, res: Response): Promise<Response> => {
+
+        const userId = req.user?._id;
+
+        const requests = await this.friendRequestModel.find({
+            filter:{sendTo : userId}
+        })
+
+        return successResponse({
+            res,
+            data:{
+                count :requests.data.length,
+                requests : requests.data
+            }
+        });
+
+    }
+
+
+
     // ========================= User Information Updates ==========================
 
     updateBasicInfo = async (req: Request, res: Response): Promise<Response> => {
@@ -711,6 +732,7 @@ export class UserService {
 
     }
 
+
     // ============================= Account Control ===============================
 
     freezeAccount = async (req: Request, res: Response): Promise<Response> => {
@@ -719,18 +741,18 @@ export class UserService {
         let { userId } = req.params;
 
         if (!userId) {
-            // لنفسه Freez  يعمل 
+            // لنفسه freeze  يعمل 
             userId = adminId;
         }
 
-        const freezedAccount = await this.userModel.updateOne({
+        const freezeedAccount = await this.userModel.updateOne({
             _id: userId,
-            freezedAt: { $exists: false },
-            freezedBy: { $exists: false },
+            freezeedAt: { $exists: false },
+            freezeedBy: { $exists: false },
         }, {
             $set: {
-                freezedAt: new Date(),
-                freezedBy: adminId,
+                freezeedAt: new Date(),
+                freezeedBy: adminId,
                 changeCredentialsTime: new Date()
             },
             $unset: {
@@ -739,19 +761,19 @@ export class UserService {
             }
         })
 
-        if (!freezedAccount) {
-            throw new BadRequestException("Fail To Freez Account")
+        if (!freezeedAccount) {
+            throw new BadRequestException("Fail To freeze Account")
         }
 
-        // Freez All Posts And Comments For User 
+        // freeze All Posts And Comments For User 
         await this.postModel.updateMany({
             createdBy: userId,
-            freezedAt: { $exists: false },
-            freezedBy: { $exists: false },
+            freezeedAt: { $exists: false },
+            freezeedBy: { $exists: false },
         }, {
             $set: {
-                freezedAt: new Date(),
-                freezedBy: adminId,
+                freezeedAt: new Date(),
+                freezeedBy: adminId,
             },
             $unset: {
                 restoredAt: 1,
@@ -761,12 +783,12 @@ export class UserService {
 
         await this.commentModel.updateMany({
             createdBy: userId,
-            freezedAt: { $exists: false },
-            freezedBy: { $exists: false },
+            freezeedAt: { $exists: false },
+            freezeedBy: { $exists: false },
         }, {
             $set: {
-                freezedAt: new Date(),
-                freezedBy: adminId,
+                freezeedAt: new Date(),
+                freezeedBy: adminId,
             },
             $unset: {
                 restoredAt: 1,
@@ -776,29 +798,29 @@ export class UserService {
 
         return successResponse({
             res,
-            message: "Account Freezed Success",
+            message: "Account freezeed Success",
         })
 
     }
 
-    unFreezeAccountByAdmin = async (req: Request, res: Response): Promise<Response> => {
+    unfreezeAccountByAdmin = async (req: Request, res: Response): Promise<Response> => {
 
         const adminId = req.tokenDecoded?._id;
         let { userId } = req.params as unknown as {
             userId: Types.ObjectId
         };
 
-        // UnFreezAccount
+        // UnfreezeAccount
         this.unfreezeUser(userId, adminId)
 
         return successResponse({
             res,
-            message: "Account Unfreezed Success",
+            message: "Account Unfreezeed Success",
         })
 
     }
 
-    unFreezeAccountByAccountAuthor = async (req: Request, res: Response): Promise<Response> => {
+    unfreezeAccountByAccountAuthor = async (req: Request, res: Response): Promise<Response> => {
 
         const { email, password } = req.body as unknown as {
             email: string,
@@ -820,13 +842,13 @@ export class UserService {
             throw new BadRequestException("Invalid Email Or Password");
         }
 
-        if (!user.freezedAt && !user.freezedBy) {
-            throw new BadRequestException("Account Is Not Freezed");
+        if (!user.freezeedAt && !user.freezeedBy) {
+            throw new BadRequestException("Account Is Not freezeed");
         }
 
-        if (user.freezedBy &&
-            (user.freezedBy.toString() !== user._id.toString())) {
-            throw new BadRequestException("Account Is Freezed By Admin");
+        if (user.freezeedBy &&
+            (user.freezeedBy.toString() !== user._id.toString())) {
+            throw new BadRequestException("Account Is freezeed By Admin");
         }
 
         const userId = user._id as unknown as Types.ObjectId;
@@ -835,7 +857,7 @@ export class UserService {
 
         return successResponse({
             res,
-            message: "Account Unfreezed Success",
+            message: "Account Unfreezeed Success",
         })
 
     }
@@ -850,8 +872,8 @@ export class UserService {
             throw new NotFoundException("User Not Found")
         }
 
-        if (!user.freezedAt) {
-            throw new BadRequestException("Cannot Delete Not Freezed Account");
+        if (!user.freezeedAt) {
+            throw new BadRequestException("Cannot Delete Not freezeed Account");
         }
 
         const deletedUser = await this.userModel.deleteOne({ _id: userId });

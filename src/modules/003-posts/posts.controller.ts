@@ -31,7 +31,7 @@ router.get("/",
     postService.getPosts);
 
 router.get("/{:postId}",
-    // authenticationMiddleware(), مؤقتاً بس عشان نشوفها من الميل
+    authenticationMiddleware(),
     validationMiddleware(validation.getPost),
     postService.getPost);
 
@@ -40,12 +40,12 @@ router.post("/like/:postId",
     validationMiddleware(validation.likePost),
     postService.likePost);
 
-router.delete("/freez/:postId",
+router.delete("/freeze/:postId",
     authenticationMiddleware(),
     validationMiddleware(validation.deletePost),
     postService.freezePost);
 
-router.patch("/unfreez/:postId",
+router.patch("/unfreeze/:postId",
     authenticationMiddleware(),
     validationMiddleware(validation.deletePost),
     postService.unfreezePost);

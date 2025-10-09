@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { successResponse } from "../../utils/response/success.response";
+import { successResponse } from "../../utils/response/Success.response";
 import { PostRepository, UserRepository, CommentRepository } from "../../DataBase/repository";
 import { UserModel, PostModel, CommentModel, AllowCommentsEnum, HPostDocument, CommentFlagEnum } from "../../DataBase/models";
 import { BadRequestException, NotFoundException } from "../../utils/response/error.response";
@@ -85,7 +85,7 @@ export class Comments {
 
         return successResponse({
             res, statusCode: 201,
-            info: "Comment Created Succses",
+            info: "Comment Created Success",
             data: { commentId: comment._id }
         });
 
@@ -227,7 +227,7 @@ export class Comments {
 
         return successResponse({
             res, statusCode: 201,
-            info: "Comment Updated Succses",
+            info: "Comment Updated Success",
             data: { commentId: comment._id }
         });
 
@@ -303,7 +303,7 @@ export class Comments {
 
         return successResponse({
             res, statusCode: 201,
-            info: "Replyed Succses",
+            info: "Replyed Success",
             data: { replyId: reply._id }
         });
 
@@ -338,10 +338,10 @@ export class Comments {
 
         if (comment.likes?.includes(userId)) {
             updateData = { $pull: { likes: userId } };
-            message = `${comment.flag === CommentFlagEnum.comment ? "Comment" : "Reply"} Unliked Succses`
+            message = `${comment.flag === CommentFlagEnum.comment ? "Comment" : "Reply"} Unliked Success`
         } else {
             updateData = { $addToSet: { likes: userId } };
-            message = `${comment.flag === CommentFlagEnum.comment ? "Comment" : "Reply"} Liked Succses`
+            message = `${comment.flag === CommentFlagEnum.comment ? "Comment" : "Reply"} Liked Success`
         }
 
         await this.commentModel.findOneAndUpdate({
@@ -409,7 +409,7 @@ export class Comments {
 
         return successResponse({
             res,
-            message: "Comment Deleted Succses"
+            message: "Comment Deleted Success"
         });
     }
 

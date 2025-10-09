@@ -2,17 +2,17 @@ import z from "zod";
 import { generalFields } from "../../middlewares/validation.middleware";
 import { RoleEnum } from "../../DataBase/models";
 
-export const freezAccount = {
+export const freezeAccount = {
     params: z.object({
         userId: generalFields.id.optional()
     })
 }
 
-export const unFreezAccountByAdmin = {
-    params: freezAccount.params.extend({})
+export const unfreezeAccountByAdmin = {
+    params: freezeAccount.params.extend({})
 }
 
-export const unFreezAccountByAccountAuther = {
+export const unfreezeAccountByAccountAuthor = {
     body: z.strictObject({
         email: generalFields.email,
         password: generalFields.password
@@ -82,7 +82,7 @@ export const confirmUpdateEmail = {
     })
 };
 
-export const sendFriendRequst = {
+export const sendFriendRequest = {
     params: z.strictObject({
         userId: generalFields.id
     })
@@ -90,12 +90,12 @@ export const sendFriendRequst = {
 
 export const acceptFriendRequst = {
     params: z.strictObject({
-        requstId: generalFields.id
+        requestId: generalFields.id
     })
 }
 
 export const removeFriend = {
-    params: sendFriendRequst.params.extend({})
+    params: sendFriendRequest.params.extend({})
 }
 
 

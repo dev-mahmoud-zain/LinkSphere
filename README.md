@@ -12,7 +12,7 @@ It enables users to register, authenticate, create posts, comment, and interact 
 ### ✨ Current Features
 
 * 🔐 **Authentication & Authorization** – Secure user signup/login with JWT.
-* 👥 **User Management** – Profiles, roles (User, Admin, Super-Admin), and account freeze/unfreeze.
+* 👥 **User Management** – Profiles, roles (User, Admin, Super-Admin), and account freezee/unfreezee.
 * 📝 **Posts System** – Create, update, and manage posts with media & tags.
 * 💬 **Comments & Replies** – Nested comment system with likes/unlikes.
 * 📡 **Real-time Gateway** – Socket.io integration for live features.
@@ -190,8 +190,8 @@ BASE_URL
 - `PATCH /users/change-password` → Change password  
 
 ### 🔹 Account Control
-- `DELETE /users/freeze/:userId?` → Freeze account  
-- `PATCH /users/un-freeze/me` → Unfreeze own account  
+- `DELETE /users/freezee/:userId?` → freezee account  
+- `PATCH /users/un-freezee/me` → Unfreezee own account  
 
 ---
 
@@ -208,8 +208,8 @@ BASE_URL
 
 ### 🔹 Post Actions
 - `POST /posts/like/{postId}` → Like or unlike a post  
-- `DELETE /posts/freeze/{postId}` → Temporarily hide a post  
-- `PATCH /posts/unfreeze/{postId}` → Re-enable a previously frozen post  
+- `DELETE /posts/freezee/{postId}` → Temporarily hide a post  
+- `PATCH /posts/unfreezee/{postId}` → Re-enable a previously frozen post  
 
 ---
 
@@ -226,14 +226,14 @@ BASE_URL
 
 ### 🔹 Comment Actions
 - `POST /posts/{postId}/{commentId}/like` → Like or unlike a comment or reply  
-- `DELETE /posts/{postId}/{commentId}/freeze` → Temporarily hide a comment or reply  
-- `PATCH /posts/{postId}/{commentId}/unfreeze` → Re-enable a previously frozen comment or reply  
+- `DELETE /posts/{postId}/{commentId}/freezee` → Temporarily hide a comment or reply  
+- `PATCH /posts/{postId}/{commentId}/unfreezee` → Re-enable a previously frozen comment or reply  
 
 ---
 
 ## 🛠 Admin Actions
 
-- `PATCH /users/un-freeze/{userId}/admin` → Re-enable a previously frozen user account  
+- `PATCH /users/un-freezee/{userId}/admin` → Re-enable a previously frozen user account  
 - `DELETE /users/delete/{userId}` → Permanently delete a user account  
 - `PATCH /users/change-role/{userId}` → Change the role of a specific user  
 

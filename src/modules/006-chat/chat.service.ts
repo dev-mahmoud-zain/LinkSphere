@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { ICreateChattingGroup, IGetChatParams, IGetChatQuery, IGetGroupChatParams, IGetGroupChatQuery, IJoinRoom, ISayHiDto, ISendGroupMessageDto, ISendMessageDto } from "./chat.dto";
-import { successResponse } from "../../utils/response/success.response";
+import { successResponse } from "../../utils/response/Success.response";
 import { ChatRepository, UserRepository } from "../../DataBase/repository";
 import { ChatModel, UserModel } from "../../DataBase/models";
 import { Types } from "mongoose";
@@ -81,7 +81,7 @@ export class ChatService {
             }
 
 
-            io?.to(connectedSockets.get(createdBy.toString() as string) as string[]).emit("success_message", { content })
+            io?.to(connectedSockets.get(createdBy.toString() as string) as string[]).emit("Success_message", { content })
             io?.to(connectedSockets.get(sendTo.toString()) as string[]).emit("new_message", { content, from: socket.credentials?.user })
 
 
@@ -137,7 +137,7 @@ export class ChatService {
             }
 
 
-            io?.to(connectedSockets.get(createdBy?.toString() as string) as string[]).emit("success_message", { content });
+            io?.to(connectedSockets.get(createdBy?.toString() as string) as string[]).emit("Success_message", { content });
 
             socket?.to(chat.roomId).emit("new_message", { content, from: socket.credentials?.user, groupId });
 
