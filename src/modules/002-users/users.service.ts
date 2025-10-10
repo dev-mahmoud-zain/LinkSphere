@@ -3,7 +3,6 @@ import {
     deleteFile,
     deleteFiles,
     deleteFolderByPrefix,
-    getPreSignedUrl,
     uploadFile,
     uploadFiles
 } from "../../utils/multer/s3.config";
@@ -129,27 +128,9 @@ export class UserService {
             throw new NotFoundException("Fail To Get Profile")
         }
 
-        if (user.picture) {
-            const key = await getPreSignedUrl({ Key: user.picture });
-            user.picture = key
-        }
 
-        if (user.coverImages) {
-            let keys = []
-            for (const Key of user.coverImages) {
-                keys.push(await getPreSignedUrl({ Key }));
-            }
-            user.coverImages = keys;
-        }
 
-        if (user.friends?.length) {
-            for (const friend of user.friends as unknown as IFriend[]) {
-                if (friend.picture) {
-                    const friendKey = await getPreSignedUrl({ Key: friend.picture });
-                    friend.picture = friendKey || ""
-                }
-            }
-        }
+
 
         const groups = await this.chatModel.find({
             filter: {
@@ -158,14 +139,7 @@ export class UserService {
             }
         })
 
-        if (groups?.data?.length) {
-            for (const group of groups.data) {
-                if (group.groupImage) {
-                    const groupKey = await getPreSignedUrl({ Key: group.groupImage });
-                    group.groupImage = groupKey || "";
-                }
-            }
-        }
+
 
         return successResponse({
             res,
@@ -180,15 +154,6 @@ export class UserService {
             userId: Types.ObjectId
         };
 
-
-        interface IFriend {
-            _id: string;
-            firstName: string;
-            lastName: string;
-            email: string;
-            gender: string;
-            picture: string;
-        }
 
         const user = await this.userModel.findOne({
             filter: {
@@ -210,32 +175,8 @@ export class UserService {
             }
         })
 
-
-
         if (!user) {
             throw new NotFoundException("Fail To Get Profile")
-        }
-
-        if (user.picture) {
-            const key = await getPreSignedUrl({ Key: user.picture });
-            user.picture = key
-        }
-
-        if (user.coverImages) {
-            let keys = []
-            for (const Key of user.coverImages) {
-                keys.push(await getPreSignedUrl({ Key }));
-            }
-            user.coverImages = keys;
-        }
-
-        if (user.friends?.length) {
-            for (const friend of user.friends as unknown as IFriend[]) {
-                if (friend.picture) {
-                    const friendKey = await getPreSignedUrl({ Key: friend.picture });
-                    friend.picture = friendKey || ""
-                }
-            }
         }
 
         const groups = await this.chatModel.find({
@@ -245,14 +186,7 @@ export class UserService {
             }
         })
 
-        if (groups?.data?.length) {
-            for (const group of groups.data) {
-                if (group.groupImage) {
-                    const groupKey = await getPreSignedUrl({ Key: group.groupImage });
-                    group.groupImage = groupKey || "";
-                }
-            }
-        }
+
 
         return successResponse({
             res,

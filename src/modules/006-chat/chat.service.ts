@@ -6,7 +6,7 @@ import { ChatModel, UserModel } from "../../DataBase/models";
 import { Types } from "mongoose";
 import { BadRequestException, NotFoundException } from "../../utils/response/error.response";
 import { connectedSockets } from "../005-gateway";
-import { deleteFile, getPreSignedUrl, uploadFile } from "../../utils/multer/s3.config";
+import { deleteFile, uploadFile } from "../../utils/multer/s3.config";
 import { v4 as uuId } from "uuid";
 
 
@@ -73,13 +73,6 @@ export class ChatService {
                     throw new BadRequestException("Fail To Send Message")
                 }
             }
-
-
-            if (socket.credentials?.user?.picture) {
-                const key = await getPreSignedUrl({ Key: socket.credentials?.user?.picture });
-                socket.credentials.user.picture = key
-            }
-
 
             io?.to(connectedSockets.get(createdBy.toString() as string) as string[]).emit("Success_message", { content })
             io?.to(connectedSockets.get(sendTo.toString()) as string[]).emit("new_message", { content, from: socket.credentials?.user })
@@ -179,15 +172,6 @@ export class ChatService {
             throw new BadRequestException("Fail To Find Chat");
         }
 
-        const chatParticipants = chat?.participants as any;
-        if (chatParticipants[0].picture) {
-            chatParticipants[0].picture = await getPreSignedUrl({ Key: chatParticipants[0].picture });
-        }
-
-        if (chatParticipants[1].picture) {
-            chatParticipants[1].picture = await getPreSignedUrl({ Key: chatParticipants[1].picture });
-        }
-        chat.participants = chatParticipants;
 
         return successResponse({
             res,
@@ -229,7 +213,6 @@ export class ChatService {
             throw new BadRequestException("Fail To Find Chat");
         }
 
-        chat.groupImage = await getPreSignedUrl({ Key: chat.groupImage })
 
         return successResponse({
             res,
