@@ -12,7 +12,7 @@ config({ path: resolve("./config/.env.development") })
 
 
 import { authRouter, chatRouter, initializeIo, postsRouter, usersRouter } from "./modules/";
-import { globalErrorHandler } from "./utils/response/error.response";
+import { BadRequestException, globalErrorHandler } from "./utils/response/error.response";
 import connectToDataBase from "./DataBase/DB_Connection";
 
 // GQL
@@ -21,6 +21,7 @@ import { GQLSchema } from "./modules/graphql";
 import { authenticationMiddleware } from "./middlewares/authentication.middleware";
 
 import morgan from "morgan";
+import { getPreSignedUrl } from "./utils/multer/s3.config";
 
 // App Start Point
 export default async function bootstrap(): Promise<void> {
@@ -83,26 +84,19 @@ export default async function bootstrap(): Promise<void> {
     app.use("/chat", chatRouter);
 
 
-    // Get Asset From S3 :
-    //  ملهاش لازمة حالياً 
-    //  انا برجع لينك الصورة دايركت مع اليوزر في البروفايل
-    // أبقى اشغلها لما أحتاجها
 
 
-    // app.get("/images/*path", async (req, res): Promise<void> => {
-    //     const { path } = req.params as { path: string[] };
-    //     const Key = path.join("/");
-    //     const s3Response = await getAsset({ Key });
-    //     if (!s3Response?.Body) {
-    //         throw new BadRequestException("Fail To Fetch This Resourse");
-    //     }
-    //     res.setHeader(
-    //         "Content-Type",
-    //         s3Response.ContentType || "application/octet-stram"
-    //     );
-    //     // return s3CreateWriteStream(s3Response.Body as NodeJS.ReadableStream, res);
-    //     res.json({Key})
-    // })
+      app.get("/image/*key", async (req:Request, res:Response) => {
+
+        const key = req.params.key as unknown as string[] ;
+
+        const url = await getPreSignedUrl({ Key :key.join("/")})
+
+        console.log(key.join("/") === "LinkSphere/users/LinkSphere/users/68df351b8d9d2c0c94c98ef6/posts/6505c871-e571-42ce-9335-db0650a1e886/eae357ae-2b0e-4177-8b05-96204b911442_484382902_1736710610533236_8507275307439677697_n.jpg")
+        
+
+        res.json({ url })
+    })
 
 
 

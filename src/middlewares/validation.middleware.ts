@@ -37,7 +37,7 @@ export const validationMiddleware = (schima: SchimaType) => {
 
             const validationResult = schima[key].safeParse(req[key]);
 
-            if (!validationResult.Success) {
+            if (!validationResult.success) {
                 const errors = validationResult.error as ZodError;
 
                 validationErrors.push({
