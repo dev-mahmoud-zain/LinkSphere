@@ -83,11 +83,13 @@ export class PostService {
         return successResponse({
             res, statusCode: 201,
             info: "Post Created Success", data: {
-                postId: post._id
+                postId: post._id,
+                attachments : post.attachments
             }
         });
 
     }
+
 
     updatePost = async (req: Request, res: Response): Promise<Response> => {
 
@@ -100,6 +102,8 @@ export class PostService {
                 createdBy: userId
             }
         })
+
+        
 
         if (!post) {
             throw new NotFoundException("Post Not Found");

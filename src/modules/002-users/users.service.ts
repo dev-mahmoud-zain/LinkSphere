@@ -26,7 +26,6 @@ import { generateOTP } from "../../utils/security/OTP";
 import { emailEvent } from "../../utils/email/email.events";
 import { CommentModel, PostModel, HUserDocument, UserModel, RoleEnum, FriendRequestModel, ChatModel } from "../../DataBase/models";
 import { Types } from "mongoose";
-import { generalFields } from "../../middlewares/validation.middleware";
 
 export class UserService {
 
@@ -93,16 +92,8 @@ export class UserService {
     // ============================ Profile Management =============================
 
     profile = async (req: Request, res: Response): Promise<Response> => {
-        // const { password, twoSetupVerificationCode, twoSetupVerificationCodeExpiresAt, ...safeUser } = req.user?.toObject() as HUserDocument;
 
-        interface IFriend {
-            _id: string;
-            firstName: string;
-            lastName: string;
-            email: string;
-            gender: string;
-            picture: string;
-        }
+
 
         const user = await this.userModel.findOne({
             filter: {
@@ -128,17 +119,12 @@ export class UserService {
             throw new NotFoundException("Fail To Get Profile")
         }
 
-
-
-
-
         const groups = await this.chatModel.find({
             filter: {
                 groupName: { $exists: true },
                 participants: { $in: req.user?._id }
             }
         })
-
 
 
         return successResponse({
@@ -353,35 +339,36 @@ export class UserService {
 
     acceptFriendRequest = async (req: Request, res: Response): Promise<Response> => {
 
-        const { RequestId } = req.params as unknown as { RequestId: Types.ObjectId }
-        const reseverId = req.user?._id as unknown as Types.ObjectId;
+        const { requestId } = req.params as unknown as { requestId: Types.ObjectId }
+        const receiverId = req.user?._id as unknown as Types.ObjectId;
 
-        const freindRequest = await this.friendRequestModel.findOneAndUpdate({
+
+        const friendRequest = await this.friendRequestModel.findOneAndUpdate({
             filter: {
-                _id: RequestId,
-                sendTo: reseverId,
+                _id: requestId,
+                sendTo: receiverId,
                 acceptedAt: { $exists: false }
             }, updateData: {
                 acceptedAt: new Date()
             }
         })
 
-        if (!freindRequest) {
+        if (!friendRequest) {
             throw new NotFoundException("Friend Request Not Exists");
         }
 
 
         const accepted = await Promise.all([
             this.userModel.updateOne({
-                _id: freindRequest.sendBy
+                _id: friendRequest.sendBy
             }, {
-                $addToSet: { friends: reseverId }
+                $addToSet: { friends: receiverId }
             }),
 
             this.userModel.updateOne({
-                _id: reseverId
+                _id: receiverId
             }, {
-                $addToSet: { friends: freindRequest.sendBy }
+                $addToSet: { friends: friendRequest.sendBy }
             })
         ]);
 
@@ -470,14 +457,17 @@ export class UserService {
         const userId = req.user?._id;
 
         const requests = await this.friendRequestModel.find({
-            filter:{sendTo : userId}
+            filter: { 
+                sendTo: userId ,
+                acceptedAt: { $exists: false }
+             }
         })
 
         return successResponse({
             res,
-            data:{
-                count :requests.data.length,
-                requests : requests.data
+            data: {
+                count: requests.data.length,
+                requests: requests.data
             }
         });
 

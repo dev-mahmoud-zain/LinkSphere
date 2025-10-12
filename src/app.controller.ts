@@ -91,10 +91,7 @@ export default async function bootstrap(): Promise<void> {
         const key = req.params.key as unknown as string[] ;
 
         const url = await getPreSignedUrl({ Key :key.join("/")})
-
-        console.log(key.join("/") === "LinkSphere/users/LinkSphere/users/68df351b8d9d2c0c94c98ef6/posts/6505c871-e571-42ce-9335-db0650a1e886/eae357ae-2b0e-4177-8b05-96204b911442_484382902_1736710610533236_8507275307439677697_n.jpg")
         
-
         res.json({ url })
     })
 
