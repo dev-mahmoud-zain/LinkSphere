@@ -30,6 +30,18 @@ router.get("/",
     validationMiddleware(validation.getPosts),
     postService.getPosts);
 
+router.get("/me",
+    authenticationMiddleware(),
+    postService.getMyPosts);
+
+router.get("/user/:userId",
+    authenticationMiddleware(),
+    postService.getUserPosts);
+
+router.get("/freezed",
+    authenticationMiddleware(),
+    postService.getFreezedPosts);
+
 router.get("/{:postId}",
     authenticationMiddleware(),
     validationMiddleware(validation.getPost),

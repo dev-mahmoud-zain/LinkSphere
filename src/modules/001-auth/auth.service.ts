@@ -18,9 +18,9 @@ import { LogoutFlagEnum, TokenService } from "../../utils/security/token.securit
 import { JwtPayload } from "jsonwebtoken";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { UpdateQuery } from "mongoose";
-import { successResponse } from "../../utils/response/Success.response";
 import { UserRepository } from "../../DataBase/repository";
 import { UserModel, HUserDocument, ProviderEnum, TwoSetupVerificationEnum } from "../../DataBase/models";
+import { successResponse } from "../../utils/response/success.response";
 
 
 
@@ -257,14 +257,14 @@ class AuthenticationServices {
             throw new ConflictException("Invalid Provider", { userProvider: user.provider })
         }
 
-        const [newUser] = await this.userModel.create({
+        const newUser = await this.userModel.createUser({
             data: [{
                 userName: name as string,
                 email: email as string,
                 picture: picture as string,
                 confirmedAt: new Date()
             }]
-        }) || [];
+        });
 
 
         if (!newUser) {
@@ -618,7 +618,7 @@ class AuthenticationServices {
         let action = TwoSetupVerificationEnum.enable; //defult = enable
 
         if (user?.twoSetupVerificationCode) {
-            throw new BadRequestException("Alredy Ask To disable Please Verify OTP Code")
+            throw new BadRequestException("Already Ask To disable Please Verify OTP Code")
         }
         if (user?.twoSetupVerification === TwoSetupVerificationEnum.enable) {
             action = TwoSetupVerificationEnum.disable;

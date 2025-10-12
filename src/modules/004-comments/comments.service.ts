@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { successResponse } from "../../utils/response/Success.response";
+import { successResponse } from "../../utils/response/success.response";
 import { PostRepository, UserRepository, CommentRepository } from "../../DataBase/repository";
 import { UserModel, PostModel, CommentModel, AllowCommentsEnum, HPostDocument, CommentFlagEnum } from "../../DataBase/models";
 import { BadRequestException, NotFoundException } from "../../utils/response/error.response";

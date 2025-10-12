@@ -20,7 +20,7 @@ import {
     UserRepository
 } from "../../DataBase/repository";
 import { JwtPayload } from "jsonwebtoken";
-import { successResponse } from "../../utils/response/Success.response";
+import { successResponse } from "../../utils/response/success.response";
 import { compareHash, generateHash } from "../../utils/security/hash.security";
 import { generateOTP } from "../../utils/security/OTP";
 import { emailEvent } from "../../utils/email/email.events";
@@ -300,15 +300,25 @@ export class UserService {
             throw new BadRequestException("User Cannot Send Friend Request To Himself");
         }
 
+        if (await this.userModel.findOne({
+            filter: {
+                _id: userId,
+                friends: { $in: sendBy }
+            }
+        })) {
+            throw new ConflictException("User Already In Friends list");
+        }
+
         if (await this.friendRequestModel.findOne({
             filter: {
                 sendBy: { $in: [userId, sendBy] },
                 sendto: { $in: [userId, sendBy] },
             }
-        })
-        ) {
-            throw new ConflictException("Friend Request Alredy Exists");
+        })) {
+            throw new ConflictException("Friend Request Already Exists");
         }
+
+
 
         if (!await this.userModel.findOne({
             filter: { _id: userId }
@@ -438,11 +448,25 @@ export class UserService {
                 updateData: { $pull: { friends: req.user?._id } }
             }),
 
+            this.friendRequestModel.findOne({
+                filter: {
+                    acceptedAt: { $exists: false },
+                    $or: [
+                        {
+                            sendBy: userId,
+                        },
+                        {
+                            sendTo: userId,
+                        }
+                    ]
+                }
+            })
         ])
 
         if (!removeFriend) {
             throw new BadRequestException("Fail To Remove Friend");
         }
+
 
         return successResponse({
             res,
@@ -457,10 +481,10 @@ export class UserService {
         const userId = req.user?._id;
 
         const requests = await this.friendRequestModel.find({
-            filter: { 
-                sendTo: userId ,
+            filter: {
+                sendTo: userId,
                 acceptedAt: { $exists: false }
-             }
+            }
         })
 
         return successResponse({
@@ -468,6 +492,37 @@ export class UserService {
             data: {
                 count: requests.data.length,
                 requests: requests.data
+            }
+        });
+
+    }
+
+    getFriendsList = async (req: Request, res: Response): Promise<Response> => {
+
+        const userId = req.user?._id;
+
+        const friends = await this.userModel.find({
+            filter: {
+                friends: { $in: userId },
+            },
+            projection: {
+                firstName: 1,
+                lastName: 1,
+                slug: 1,
+                email: 1,
+                phone: 1,
+                gender: 1,
+                coverImages: 1,
+                picture: 1,
+            }
+        })
+
+
+        return successResponse({
+            res,
+            data: {
+                count: friends.data.length,
+                friends: friends.data
             }
         });
 

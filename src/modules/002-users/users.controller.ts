@@ -42,6 +42,10 @@ router.delete("/profile-cover-images",
 // =========================  Friendship Management ============================
 
 
+router.get("/friends-list",
+    authenticationMiddleware(),
+    usersService.getFriendsList);
+
 router.post("/friend-request/:userId",
     authenticationMiddleware(),
     validationMiddleware(usersValidation.sendFriendRequest),

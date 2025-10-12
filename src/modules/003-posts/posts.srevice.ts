@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { successResponse } from "../../utils/response/Success.response";
+import { successResponse } from "../../utils/response/success.response";
 import { CommentRepository, PostRepository, UserRepository } from "../../DataBase/repository";
 import { AvailabilityEnum, HPostDocument, PostModel } from "../../DataBase/models/post.model";
 import { UserModel } from "../../DataBase/models/user.model";
@@ -84,7 +84,7 @@ export class PostService {
             res, statusCode: 201,
             info: "Post Created Success", data: {
                 postId: post._id,
-                attachments : post.attachments
+                attachments: post.attachments
             }
         });
 
@@ -103,7 +103,7 @@ export class PostService {
             }
         })
 
-        
+
 
         if (!post) {
             throw new NotFoundException("Post Not Found");
@@ -253,6 +253,130 @@ export class PostService {
                             select: "firstName lastName slug email phone gender picture coverImages"
                         }
                     },
+                    {
+                        path: "lastComment",
+                        match: { flag: CommentFlagEnum.comment },
+                        options: {
+                            sort: { createdAt: -1 },
+                            select: "-id"
+                        }, populate: [{
+                            path: "lastReply",
+                            match: { flag: CommentFlagEnum.reply },
+                            options: {
+                                sort: { createdAt: -1 }
+                            },
+                            select: "-id"
+                        }]
+                    }
+                ]
+            },
+            page: page,
+            limit
+        });
+
+        return successResponse({
+            res,
+            data: {
+                ...(page && posts.pagination),
+                count: posts.data.length,
+                posts: posts.data,
+            }
+        });
+
+    }
+
+    getFreezedPosts = async (req: Request, res: Response): Promise<Response> => {
+
+        let { page, limit } = req.query as unknown as {
+            page: number,
+            limit: number
+        };
+        const userId = req.user?._id;
+
+        const posts = await this.postModel.find({
+            filter: {
+                createdBy: userId,
+                freezeedAt: { $exists: true },
+                pranoId: false
+            },
+            page: page,
+            limit
+        });
+
+        return successResponse({
+            res,
+            data: {
+                ...(page && posts.pagination),
+                count: posts.data.length,
+                posts: posts.data,
+            }
+        });
+
+    }
+
+    getMyPosts = async (req: Request, res: Response): Promise<Response> => {
+
+        let { page, limit } = req.query as unknown as {
+            page: number,
+            limit: number
+        };
+
+        const userId = req.user?._id;
+
+        const posts = await this.postModel.find({
+            filter: {
+                createdBy: userId,
+            },
+            options: {
+                populate: [
+                    {
+                        path: "lastComment",
+                        match: { flag: CommentFlagEnum.comment },
+                        options: {
+                            sort: { createdAt: -1 },
+                            select: "-id"
+                        }, populate: [{
+                            path: "lastReply",
+                            match: { flag: CommentFlagEnum.reply },
+                            options: {
+                                sort: { createdAt: -1 }
+                            },
+                            select: "-id"
+                        }]
+                    }
+                ]
+            },
+            page: page,
+            limit
+        });
+
+        return successResponse({
+            res,
+            data: {
+                ...(page && posts.pagination),
+                count: posts.data.length,
+                posts: posts.data,
+            }
+        });
+
+    }
+
+    getUserPosts = async (req: Request, res: Response): Promise<Response> => {
+
+        let { page, limit } = req.query as unknown as {
+            page: number,
+            limit: number
+        };
+
+        const userId = req.params.userId;
+
+        const posts = await this.postModel.find({
+            filter: {
+                createdBy: userId,
+                $or: postAvailability(req)
+            },
+            options: {
+                populate: [
                     {
                         path: "lastComment",
                         match: { flag: CommentFlagEnum.comment },

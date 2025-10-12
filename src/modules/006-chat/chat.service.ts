@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { ICreateChattingGroup, IGetChatParams, IGetChatQuery, IGetGroupChatParams, IGetGroupChatQuery, IJoinRoom, ISayHiDto, ISendGroupMessageDto, ISendMessageDto } from "./chat.dto";
-import { successResponse } from "../../utils/response/Success.response";
+import { successResponse } from "../../utils/response/success.response";
 import { ChatRepository, UserRepository } from "../../DataBase/repository";
 import { ChatModel, UserModel } from "../../DataBase/models";
 import { Types } from "mongoose";
