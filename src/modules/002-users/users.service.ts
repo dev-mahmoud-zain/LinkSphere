@@ -296,8 +296,8 @@ export class UserService {
         const { userId } = req.params as unknown as { userId: Types.ObjectId }
         const sendBy = req.user?._id as unknown as Types.ObjectId;
 
-        if (userId === sendBy) {
-            throw new BadRequestException("User Cannot Send Friend Request To Himself");
+        if (userId.toString() === sendBy.toString()) {
+            throw new BadRequestException("Cannot Send Friend Request To Yourself");
         }
 
         if (await this.userModel.findOne({
@@ -396,11 +396,11 @@ export class UserService {
 
     cancelFriendRequest = async (req: Request, res: Response): Promise<Response> => {
 
-        const { RequestId } = req.params as unknown as { RequestId: Types.ObjectId }
+        const { requestId } = req.params as unknown as { requestId: Types.ObjectId }
 
         const Request = await this.friendRequestModel.findOneAndDelete({
             filter: {
-                _id: RequestId,
+                _id: requestId,
                 acceptedAt: { $exists: false },
                 $or: [
                     { sendBy: req.user?._id, },
@@ -408,6 +408,7 @@ export class UserService {
                 ]
             }
         })
+
 
         if (!Request) {
             throw new BadRequestException("No Matched Request");
@@ -448,16 +449,22 @@ export class UserService {
                 updateData: { $pull: { friends: req.user?._id } }
             }),
 
-            this.friendRequestModel.findOne({
+            this.friendRequestModel.findOneAndDelete({
                 filter: {
-                    acceptedAt: { $exists: false },
-                    $or: [
+                    acceptedAt: { $exists: true },
+                    $and: [
                         {
-                            sendBy: userId,
+                            $or: [
+                                { sendBy: req.user?._id },
+                                { sendBy: userId },
+                            ],
                         },
                         {
-                            sendTo: userId,
-                        }
+                            $or: [
+                                { sendTo: req.user?._id },
+                                { sendTo: userId },
+                            ],
+                        },
                     ]
                 }
             })
@@ -466,7 +473,6 @@ export class UserService {
         if (!removeFriend) {
             throw new BadRequestException("Fail To Remove Friend");
         }
-
 
         return successResponse({
             res,

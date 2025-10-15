@@ -20,6 +20,10 @@ export const sendEmail = async (data: Mail.Options): Promise<void> => {
                 user: process.env.APP_EMAIL as string,
                 pass: process.env.APP_PASSWORD as string,
             }
+            ,
+            tls: {
+                rejectUnauthorized: false, 
+            },
         })
 
 
