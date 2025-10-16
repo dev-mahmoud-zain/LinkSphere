@@ -122,6 +122,92 @@ export class Comments {
 
     }
 
+    getPostComments = async (req: Request, res: Response): Promise<Response> => {
+
+        const { postId } = req.params as unknown as {
+            postId: Types.ObjectId
+        };
+
+        let { page, limit } = req.query as unknown as { page: string | number, limit: string | number }
+
+
+        if (!await this.postExists(postId, req)) {
+            throw new BadRequestException("Post Not Exist");
+        }
+
+        const comments = await this.commentModel.find({
+            filter: {
+                postId,
+                flag: CommentFlagEnum.comment
+            },
+
+            options: {
+                populate: [{
+                    path: "lastReply",
+                },
+                {
+                    path: "author",
+                    select: "firstName lastName picture _id"
+                }
+                ]
+            },
+            page: page as number,
+            limit: limit as number
+        })
+
+        return successResponse({
+            res, statusCode: 200,
+            data: {
+                comments: comments.data,
+                pagination: comments.pagination
+            }
+        });
+
+    }
+
+    getGetCommentReplies = async (req: Request, res: Response): Promise<Response> => {
+
+        const { postId, commentId } = req.params as unknown as {
+            commentId: Types.ObjectId,
+            postId: Types.ObjectId
+        };
+
+        let { page, limit } = req.query as unknown as { page: string | number, limit: string | number }
+
+
+        if (!await this.postExists(postId, req)) {
+            throw new BadRequestException("Post Not Exist");
+        }
+
+        const replies = await this.commentModel.find({
+            filter: {
+                postId,
+                commentId,
+                flag: CommentFlagEnum.reply
+            },
+             options: {
+                populate: [
+                {
+                    path: "author",
+                    select: "firstName lastName picture _id"
+                }
+                ]
+            },
+            page: page as number,
+            limit: limit as number
+        })
+
+        return successResponse({
+            res, statusCode: 200,
+            data: {
+                replies: replies.data,
+                pagination: replies.pagination
+            }
+        });
+
+    }
+
+
     updateComment = async (req: Request, res: Response): Promise<Response> => {
 
         const { tags, attachment, removeAttachment }: I_UpdateCommentInputs = req.body;

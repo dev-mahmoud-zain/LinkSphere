@@ -100,3 +100,16 @@ export const replyOnComment = {
     params: deleteComment.params.extend({}),
     body: createComment.body.extend({})
 }
+
+
+export const getPostComments = {
+    query: z.strictObject({
+        page: z.coerce.number().positive().min(1).max(10).optional(),
+        limit : z.coerce.number().positive().min(1).max(50).optional()
+    })
+}
+
+
+export const getCommentReplies= {
+    query: getPostComments.query.extend({})
+}

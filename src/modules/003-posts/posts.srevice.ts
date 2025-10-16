@@ -103,8 +103,6 @@ export class PostService {
             }
         })
 
-
-
         if (!post) {
             throw new NotFoundException("Post Not Found");
         }
@@ -411,9 +409,7 @@ export class PostService {
 
     getPost = async (req: Request, res: Response): Promise<Response> => {
 
-
-
-        const post = await this.postModel.find({
+        const post = await this.postModel.findOne({
             filter: {
                 _id: req.params.postId,
                 $or: postAvailability(req)
@@ -424,19 +420,37 @@ export class PostService {
                         path: "author",
                         options: {
                             sort: { createdAt: -1 },
-                            select: "firstName lastName slug email phone gender picture coverImages"
+                            select: "firstName lastName picture"
                         }
                     },
                     {
                         path: "lastComment",
                         match: { flag: CommentFlagEnum.comment },
                         options: {
+                            populate: [
+                                {
+                                    path: "author",
+                                    options: {
+                                        sort: { createdAt: -1 },
+                                        select: "firstName lastName picture"
+                                    }
+                                },
+                            ],
                             sort: { createdAt: -1 },
                             select: "-id"
                         }, populate: [{
                             path: "lastReply",
                             match: { flag: CommentFlagEnum.reply },
                             options: {
+                                populate: [
+                                    {
+                                        path: "author",
+                                        options: {
+                                            sort: { createdAt: -1 },
+                                            select: "firstName lastName picture"
+                                        }
+                                    },
+                                ],
                                 sort: { createdAt: -1 }
                             },
                             select: "-id"
@@ -450,10 +464,30 @@ export class PostService {
             throw new NotFoundException("Post Not Found!");
         }
 
+        const postDoc = post as any;
+
+        if (postDoc?.lastComment) {
+            const comment = postDoc.lastComment.toObject?.() || postDoc.lastComment;
+
+            postDoc.lastComment = {
+                // بننقل كل الخصائص العادية ما عدا author و lastReply
+                ...Object.fromEntries(
+                    Object.entries(comment).filter(([key]) => key !== "author" && key !== "lastReply")
+                ),
+
+                // نحط author الأول
+                author: comment.author,
+
+                // بعدين lastReply تحته
+                lastReply: comment.lastReply
+            };
+        }
+
+
         return successResponse({
             res,
             data:
-                post
+                postDoc
         });
 
     }

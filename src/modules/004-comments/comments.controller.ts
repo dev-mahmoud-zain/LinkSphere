@@ -9,7 +9,7 @@ const router = Router({ mergeParams: true });
 const comments = new Comments();
 
 
-router.post("/comment",
+router.post("/create-comment",
     authenticationMiddleware(),
     cloudFileUpload({
         validation: fileValidation.image,
@@ -24,6 +24,15 @@ router.get("/comment/:commentId",
     validationMiddleware(validation.getComment),
     comments.getComment);
 
+router.get("/comments/",
+    authenticationMiddleware(),
+    validationMiddleware(validation.getPostComments),
+    comments.getPostComments);
+
+router.get("/:commentId/replies",
+    authenticationMiddleware(),
+    validationMiddleware(validation.getCommentReplies),
+    comments.getGetCommentReplies);
 
 router.patch("/update/:commentId",
     authenticationMiddleware(),
@@ -34,7 +43,7 @@ router.patch("/update/:commentId",
     validationMiddleware(validation.updateComment),
     comments.updateComment);
 
-router.post("/:commentId/reply",
+router.post("/:commentId/create-reply",
     authenticationMiddleware(),
     cloudFileUpload({
         validation: fileValidation.image,

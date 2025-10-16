@@ -393,7 +393,6 @@ export class UserService {
         })
     }
 
-
     cancelFriendRequest = async (req: Request, res: Response): Promise<Response> => {
 
         const { requestId } = req.params as unknown as { requestId: Types.ObjectId }
@@ -533,8 +532,6 @@ export class UserService {
         });
 
     }
-
-
 
     // ========================= User Information Updates ==========================
 

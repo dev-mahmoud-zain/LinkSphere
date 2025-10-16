@@ -81,7 +81,7 @@ export abstract class DataBaseRepository<TDocument> {
                 page,
                 totalPages: Math.ceil(total / limit),
                 limit,
-                totalPosts: total
+                total
             }
         };
     }
