@@ -1,0 +1,1 @@
+export {GQLSchema} from "./schima.gql";
