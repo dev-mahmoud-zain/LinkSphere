@@ -374,7 +374,10 @@ export class PostService {
                 $or: postAvailability(req)
             },
             options: {
-                populate: [
+                populate: [{
+                    path:"author",
+                    select:"firstName lastName userName picture"
+                },
                     {
                         path: "lastComment",
                         match: { flag: CommentFlagEnum.comment },
