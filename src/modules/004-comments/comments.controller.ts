@@ -13,7 +13,7 @@ router.post("/create-comment",
     authenticationMiddleware(),
     cloudFileUpload({
         validation: fileValidation.image,
-        storageApproach: StorageEnum.disk
+        storageApproach: StorageEnum.memory
     }).single("image"),
     validationMiddleware(validation.createComment),
     comments.createComment);
@@ -38,7 +38,7 @@ router.patch("/update/:commentId",
     authenticationMiddleware(),
     cloudFileUpload({
         validation: fileValidation.image,
-        storageApproach: StorageEnum.disk
+        storageApproach: StorageEnum.memory
     }).single("image"),
     validationMiddleware(validation.updateComment),
     comments.updateComment);
@@ -47,7 +47,7 @@ router.post("/:commentId/create-reply",
     authenticationMiddleware(),
     cloudFileUpload({
         validation: fileValidation.image,
-        storageApproach: StorageEnum.disk
+        storageApproach: StorageEnum.memory
     }).single("image"),
     validationMiddleware(validation.replyOnComment),
     comments.replyOnComment);

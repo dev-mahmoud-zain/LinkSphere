@@ -424,8 +424,7 @@ export class PostService {
     return successResponse({
       res,
       data: {
-        ...(page && posts.pagination),
-        count: posts.data.length,
+        pagination: posts.pagination,
         posts: posts.data,
       },
     });

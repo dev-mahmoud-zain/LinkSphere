@@ -946,7 +946,6 @@ export class UserService {
 
     await deleteFolderFromCloudinary(`LinkSphere/users/${user._id}`);
 
-
     return successResponse({
       res,
       message: "Account Deleted Success",

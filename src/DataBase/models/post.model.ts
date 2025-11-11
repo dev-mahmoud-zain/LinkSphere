@@ -56,14 +56,19 @@ const postSchima = new Schema<IPost>(
     },
 
     attachments: {
-      type: [{
-        url: { type: String, required: true },
-        public_id: { type: String, required: true },
-      }],
-      required:false,
+      type: [
+        new Schema(
+          {
+            url: { type: String, required: true },
+            public_id: { type: String, required: true },
+          },
+          { _id: false } 
+        ),
+      ],
+      required: false,
     },
 
-    assetsFolderId:{type: String},
+    assetsFolderId: { type: String },
     availability: {
       type: String,
       enum: AvailabilityEnum,

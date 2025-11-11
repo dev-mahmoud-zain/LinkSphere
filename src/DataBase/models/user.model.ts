@@ -119,49 +119,25 @@ const userSchema = new Schema<IUser>(
     },
 
     picture: {
-      type: {
-        url: {
-          type: String,
-          required: [true, "Picture URL is required"],
+      type: new Schema(
+        {
+          url: { type: String, required: true },
+          public_id: { type: String, required: true },
         },
-        public_id: {
-          type: String,
-          required: [true, "Picture public_id is required"],
-        },
-      },
+        { _id: false }
+      ),
       required: false,
-      validate: {
-        validator: function (value: any) {
-          // لو مفيش picture خالص → تمام
-          if (!value) return true;
-          // لو في picture → لازم يكون فيها url و public_id
-          return value.url && value.public_id;
-        },
-        message:
-          "Both url and public_id are required when picture is provided.",
-      },
     },
 
     coverImage: {
-      type: {
-        url: {
-          type: String,
-          required: [true, "CoverImage URL is required"],
+      type: new Schema(
+        {
+          url: { type: String, required: true },
+          public_id: { type: String, required: true },
         },
-        public_id: {
-          type: String,
-          required: [true, "CoverImage public_id is required"],
-        },
-      },
+        { _id: false }
+      ),
       required: false,
-      validate: {
-        validator: function (value: any) {
-          if (!value) return true;
-          return value.url && value.public_id;
-        },
-        message:
-          "Both url and public_id are required when coverImage is provided.",
-      },
     },
 
     forgetPasswordOTP: { type: String },
