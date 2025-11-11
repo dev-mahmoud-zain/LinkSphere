@@ -330,7 +330,7 @@ export class PostService {
     }
 
     if (uploadedFiles.length) {
-      
+
       if (totalIfAdded > 5) {
         throw new BadRequestException("Max Attachments Limit Exceeded", {
           issues: [
@@ -807,9 +807,7 @@ export class PostService {
     });
 
     if (post.attachments?.length && post.assetsFolderId) {
-      await deleteFolderByPrefix({
-        path: `users/${userId}/posts/${post.assetsFolderId}`,
-      });
+      await deleteFolderFromCloudinary(`LinkSphere/users/${userId}/posts/${post.assetsFolderId}`)
     }
 
     return successResponse({
