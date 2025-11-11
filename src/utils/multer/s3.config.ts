@@ -26,6 +26,7 @@ const s3Config = () => {
     })
 
 }
+
 export const uploadFile = async (
     {
         storageApproach = StorageEnum.memory,

@@ -1,70 +1,104 @@
 import { Router } from "express";
 import { PostService } from "./posts.srevice";
-import { authenticationMiddleware, authorizationMiddleware } from "../../middlewares/authentication.middleware";
-import { cloudFileUpload, fileValidation, StorageEnum } from "../../utils/multer/cloud.,multer";
+import {
+  authenticationMiddleware,
+  authorizationMiddleware,
+} from "../../middlewares/authentication.middleware";
+import {
+  cloudFileUpload,
+  fileValidation,
+  StorageEnum,
+} from "../../utils/multer/cloud.,multer";
 import { validationMiddleware } from "../../middlewares/validation.middleware";
-import *  as  validation from "./posts.validation";
-import { router as commentsRouter } from "../004-comments/index"
+import * as validation from "./posts.validation";
+import { router as commentsRouter } from "../004-comments/index";
 import { endPoints } from "./posts.authorization";
 
 const postService = new PostService();
 
 const router = Router();
 
-router.use("/:postId/", commentsRouter)
+router.use("/:postId/", commentsRouter);
 
-router.post("/create-post",
-    authenticationMiddleware(),
-    cloudFileUpload({ validation: fileValidation.image, storageApproach: StorageEnum.disk }).array("attachments", 2),
-    validationMiddleware(validation.createPost),
-    postService.createPost);
+router.post(
+  "/create-post",
+  authenticationMiddleware(),
+  cloudFileUpload({
+    validation: fileValidation.image,
+    storageApproach: StorageEnum.memory,
+  }).array("attachments", 5),
+  validationMiddleware(validation.createPost),
+  postService.createPost
+);
 
-router.patch("/update-post/{:postId}",
-    authenticationMiddleware(),
-    cloudFileUpload({ validation: fileValidation.image, storageApproach: StorageEnum.disk }).array("attachments", 2),
-    validationMiddleware(validation.updatePost),
-    postService.updatePost);
+router.patch(
+  "/update-content/{:postId}",
+  authenticationMiddleware(),
+  validationMiddleware(validation.updatePostContent),
+  postService.updatePostContent
+);
 
-router.get("/",
-    authenticationMiddleware(),
-    validationMiddleware(validation.getPosts),
-    postService.getPosts);
+router.patch(
+  "/update-attachments/{:postId}",
+  authenticationMiddleware(),
+  cloudFileUpload({
+    validation: fileValidation.image,
+    storageApproach: StorageEnum.memory,
+  }).array("addToAttachments", 5),
+  validationMiddleware(validation.updatePostAttachments),
+  postService.updatePostAttachments
+);
 
-router.get("/me",
-    authenticationMiddleware(),
-    postService.getMyPosts);
+router.get(
+  "/",
+  authenticationMiddleware(),
+  validationMiddleware(validation.getPosts),
+  postService.getPosts
+);
 
-router.get("/user/:userId",
-    authenticationMiddleware(),
-    postService.getUserPosts);
+router.get("/me", authenticationMiddleware(), postService.getMyPosts);
 
-router.get("/freezed",
-    authenticationMiddleware(),
-    postService.getFreezedPosts);
+router.get(
+  "/user/:userId",
+  authenticationMiddleware(),
+  postService.getUserPosts
+);
 
-router.get("/{:postId}",
-    authenticationMiddleware(),
-    validationMiddleware(validation.getPost),
-    postService.getPost);
+router.get("/freezed", authenticationMiddleware(), postService.getFreezedPosts);
 
-router.post("/like/:postId",
-    authenticationMiddleware(),
-    validationMiddleware(validation.likePost),
-    postService.likePost);
+router.get(
+  "/{:postId}",
+  authenticationMiddleware(),
+  validationMiddleware(validation.getPost),
+  postService.getPost
+);
 
-router.delete("/freeze/:postId",
-    authenticationMiddleware(),
-    validationMiddleware(validation.deletePost),
-    postService.freezePost);
+router.post(
+  "/like/:postId",
+  authenticationMiddleware(),
+  validationMiddleware(validation.likePost),
+  postService.likePost
+);
 
-router.patch("/unfreeze/:postId",
-    authenticationMiddleware(),
-    validationMiddleware(validation.deletePost),
-    postService.unfreezePost);
+router.delete(
+  "/freeze/:postId",
+  authenticationMiddleware(),
+  validationMiddleware(validation.deletePost),
+  postService.freezePost
+);
 
-router.delete("/:postId",
-    authorizationMiddleware(endPoints.deletePost),
-    validationMiddleware(validation.deletePost),
-    postService.deletePost);
+router.patch(
+  "/unfreeze/:postId",
+  authenticationMiddleware(),
+  validationMiddleware(validation.deletePost),
+  postService.unfreezePost
+);
+
+router.delete(
+  "/:postId",
+  authorizationMiddleware(endPoints.deletePost),
+  validationMiddleware(validation.deletePost),
+  postService.deletePost
+);
 
 export default router;

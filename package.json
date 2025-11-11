@@ -32,6 +32,7 @@
     "@aws-sdk/s3-request-presigner": "^3.879.0",
     "@types/npm": "^7.19.3",
     "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.8.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",

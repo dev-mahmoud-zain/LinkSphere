@@ -7,7 +7,7 @@ import { GraphQLError } from "graphql";
 
 
 type KeyReqType = keyof Request;
-type SchimaType = Partial<Record<KeyReqType, ZodType>>;
+type SchemaType = Partial<Record<KeyReqType, ZodType>>;
 type validationErrorsType = Array<{
     key: KeyReqType,
     issues: Array<{
@@ -18,14 +18,14 @@ type validationErrorsType = Array<{
 
 
 
-export const validationMiddleware = (schima: SchimaType) => {
+export const validationMiddleware = (schema: SchemaType) => {
     return (req: Request, res: Response, next: NextFunction): NextFunction => {
 
         const validationErrors: validationErrorsType = [];
 
-        for (const key of Object.keys(schima) as KeyReqType[]) {
+        for (const key of Object.keys(schema) as KeyReqType[]) {
 
-            if (!schima[key]) continue;
+            if (!schema[key]) continue;
 
             if (req.file) {
                 req.body.attachment = req.file;
@@ -35,7 +35,7 @@ export const validationMiddleware = (schima: SchimaType) => {
                 req.body.attachments = req.files;
             }
 
-            const validationResult = schima[key].safeParse(req[key]);
+            const validationResult = schema[key].safeParse(req[key]);
 
             if (!validationResult.success) {
                 const errors = validationResult.error as ZodError;
@@ -66,8 +66,8 @@ export const validationMiddleware = (schima: SchimaType) => {
     }
 }
 
-export const graphQLValidationMiddleware = async <T = any>(schima: ZodType, args: T) => {
-    const validationResult = await schima.safeParseAsync(args);
+export const graphQLValidationMiddleware = async <T = any>(schema: ZodType, args: T) => {
+    const validationResult = await schema.safeParseAsync(args);
     if (validationResult.error) {
         const ZError = validationResult.error as ZodError;
 
@@ -127,7 +127,7 @@ export const generalFields = {
             size: z.number()
         }).refine((data) => {
             return data.buffer || data.path;
-        }, { error: "Neither Path Or Buffer Is Avalibale", path: ["file"] })
+        }, { error: "Neither Path Or Buffer Is Available", path: ["file"] })
 
     }
 }

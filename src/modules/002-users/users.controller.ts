@@ -24,16 +24,16 @@ router.patch("/profile-picture",
     cloudFileUpload({ validation: fileValidation.image, storageApproach: StorageEnum.memory }).single("image")
     , usersService.uploadProfilePicture);
 
-router.patch("/profile-cover-images",
+router.patch("/profile-cover",
     authenticationMiddleware(),
-    cloudFileUpload({ validation: fileValidation.image, storageApproach: StorageEnum.disk }).array("images", 2)
-    , usersService.uploadCoverImages);
+    cloudFileUpload({ validation: fileValidation.image, storageApproach: StorageEnum.memory }).single("image")
+    , usersService.uploadCoverImage);
 
 router.delete("/profile-picture",
     authenticationMiddleware(),
     usersService.deleteProfilePicture);
 
-router.delete("/profile-cover-images",
+router.delete("/profile-cover-image",
     authenticationMiddleware(),
     usersService.deleteCoverImages);
 
@@ -53,12 +53,12 @@ router.post("/friend-request/:userId",
 
 router.patch("/accept-friend-request/:requestId",
     authenticationMiddleware(),
-    validationMiddleware(usersValidation.acceptFriendRequst),
+    validationMiddleware(usersValidation.acceptFriendRequest),
     usersService.acceptFriendRequest);
 
 router.delete("/cancel-friend-request/:requestId",
     authenticationMiddleware(),
-    validationMiddleware(usersValidation.cancelFriendRequst),
+    validationMiddleware(usersValidation.cancelFriendRequest),
     usersService.cancelFriendRequest);
 
 router.delete("/remove-friend/:userId",

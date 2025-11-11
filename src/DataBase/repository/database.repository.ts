@@ -44,6 +44,7 @@ export abstract class DataBaseRepository<TDocument> {
         if (options?.populate) {
             doc.populate(options.populate);
         }
+
         return await doc.exec();
     }
 

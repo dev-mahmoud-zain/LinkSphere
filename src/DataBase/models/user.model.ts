@@ -1,84 +1,86 @@
-import { Schema, models, model, HydratedDocument } from "mongoose";
+import mongoose, { Schema, models, model, HydratedDocument } from "mongoose";
 import { generateHash } from "../../utils/security/hash.security";
 import { emailEvent } from "../../utils/email/email.events";
+import { IImage } from "../../utils/cloudinary/cloudinary.interface";
 
 export enum GenderEnum {
-    male = "male",
-    female = "female"
+  male = "male",
+  female = "female",
 }
 export enum RoleEnum {
-    user = "user",
-    admin = "admin",
-    suberAdmin = "suber-admin"
+  user = "user",
+  admin = "admin",
+  suberAdmin = "suber-admin",
 }
 export enum ProviderEnum {
-    system = "system",
-    google = "google"
+  system = "system",
+  google = "google",
 }
 
 export enum TwoSetupVerificationEnum {
-    enable = "enable",
-    disable = "disable"
+  enable = "enable",
+  disable = "disable",
 }
 
 export interface IUser {
-    _id: Schema.Types.ObjectId;
-    firstName: string;
-    lastName: string;
-    userName?: string;
-    slug: string;
+  _id: Schema.Types.ObjectId;
+  firstName: string;
+  lastName: string;
+  userName?: string;
+  slug: string;
 
-    email: string;
-    confirmedAt: Date;
-    confirmEmailOTP?: string;
-    confirmEmailSentTime?: Date;
-    OTPReSendCount: number;
-    otpBlockExpiresAt: Date;
+  email: string;
+  confirmedAt: Date;
+  confirmEmailOTP?: string;
+  confirmEmailSentTime?: Date;
+  OTPReSendCount: number;
+  otpBlockExpiresAt: Date;
 
-    newEmail?: string,
-    updateEmailOTP?: string;
-    updateEmailOTPExpiresAt?: Date;
+  newEmail?: string;
+  updateEmailOTP?: string;
+  updateEmailOTPExpiresAt?: Date;
 
-    password: string,
-    reSetPasswordOTP: string;
+  password: string;
+  reSetPasswordOTP: string;
 
-    changeCredentialsTime?: Date;
+  changeCredentialsTime?: Date;
 
-    phone?: string;
+  phone?: string;
 
-    address?: string;
+  address?: string;
 
-    gender: GenderEnum;
+  gender: GenderEnum;
 
-    role: RoleEnum;
+  role: RoleEnum;
 
-    createdAt: Date;
+  createdAt: Date;
 
-    updatedAt?: Date;
+  updatedAt?: Date;
 
-    provider: string;
+  provider: string;
 
-    picture?: string;
-    coverImages?: string[],
+  picture?: IImage;
+  coverImage?: IImage;
 
-    forgetPasswordOTP?: string;
-    forgetPasswordOTPExpiresAt?: Date;
-    forgetPasswordCount?: number;
-    forgetPasswordBlockExpiresAt?: Date;
+  forgetPasswordOTP?: string;
+  forgetPasswordOTPExpiresAt?: Date;
+  forgetPasswordCount?: number;
+  forgetPasswordBlockExpiresAt?: Date;
 
-    freezeedAt?: Date;
-    freezeedBy?: Schema.Types.ObjectId;
-    restoredAt?: Date;
-    restoredBy?: Schema.Types.ObjectId;
+  freezeedAt?: Date;
+  freezeedBy?: Schema.Types.ObjectId;
+  restoredAt?: Date;
+  restoredBy?: Schema.Types.ObjectId;
 
-    twoSetupVerification: TwoSetupVerificationEnum;
-    twoSetupVerificationCode?: string;
-    twoSetupVerificationCodeExpiresAt?: Date;
+  twoSetupVerification: TwoSetupVerificationEnum;
+  twoSetupVerificationCode?: string;
+  twoSetupVerificationCodeExpiresAt?: Date;
 
-    friends? : Schema.Types.ObjectId[];
+  friends?: Schema.Types.ObjectId[];
 }
 
-const userSchema = new Schema<IUser>({
+const userSchema = new Schema<IUser>(
+  {
     firstName: { type: String, required: true, min: 3, max: 25 },
     lastName: { type: String, required: true, min: 3, max: 25 },
     slug: { type: String, required: true, min: 6, max: 51 },
@@ -94,9 +96,10 @@ const userSchema = new Schema<IUser>({
     updateEmailOTPExpiresAt: { type: Date },
 
     password: {
-        type: String, required: function () {
-            return this.provider === ProviderEnum.system ? true : false
-        }
+      type: String,
+      required: function () {
+        return this.provider === ProviderEnum.system ? true : false;
+      },
     },
 
     reSetPasswordOTP: { type: String },
@@ -109,10 +112,57 @@ const userSchema = new Schema<IUser>({
 
     createdAt: { type: Date },
     updatedAt: { type: Date },
-    provider: { type: String, enum: ProviderEnum, default: ProviderEnum.system },
+    provider: {
+      type: String,
+      enum: ProviderEnum,
+      default: ProviderEnum.system,
+    },
 
-    picture: { type: String },
-    coverImages: { type: [String] },
+    picture: {
+      type: {
+        url: {
+          type: String,
+          required: [true, "Picture URL is required"],
+        },
+        public_id: {
+          type: String,
+          required: [true, "Picture public_id is required"],
+        },
+      },
+      required: false,
+      validate: {
+        validator: function (value: any) {
+          // لو مفيش picture خالص → تمام
+          if (!value) return true;
+          // لو في picture → لازم يكون فيها url و public_id
+          return value.url && value.public_id;
+        },
+        message:
+          "Both url and public_id are required when picture is provided.",
+      },
+    },
+
+    coverImage: {
+      type: {
+        url: {
+          type: String,
+          required: [true, "CoverImage URL is required"],
+        },
+        public_id: {
+          type: String,
+          required: [true, "CoverImage public_id is required"],
+        },
+      },
+      required: false,
+      validate: {
+        validator: function (value: any) {
+          if (!value) return true;
+          return value.url && value.public_id;
+        },
+        message:
+          "Both url and public_id are required when coverImage is provided.",
+      },
+    },
 
     forgetPasswordOTP: { type: String },
     forgetPasswordOTPExpiresAt: { type: String },
@@ -125,85 +175,92 @@ const userSchema = new Schema<IUser>({
     restoredAt: { type: Date },
     restoredBy: { type: Schema.Types.ObjectId, ref: "User" },
 
-    twoSetupVerification: { type: String, enum: TwoSetupVerificationEnum, default: TwoSetupVerificationEnum.disable },
+    twoSetupVerification: {
+      type: String,
+      enum: TwoSetupVerificationEnum,
+      default: TwoSetupVerificationEnum.disable,
+    },
     twoSetupVerificationCode: { type: String },
     twoSetupVerificationCodeExpiresAt: { type: Date },
 
-    friends : [{type:Schema.Types.ObjectId , ref:"User"}],
-},
-    {
-        strictQuery: true,
-        timestamps: true,
-        toJSON: { virtuals: true },
-        toObject: { virtuals: true }
-    }
+    friends: [{ type: Schema.Types.ObjectId, ref: "User" }],
+  },
+  {
+    strictQuery: true,
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
-
-userSchema.virtual("userName").set(function (value: String) {
+userSchema
+  .virtual("userName")
+  .set(function (value: String) {
     const [firstName, lastName] = value.split(" ") || [];
-    this.set({ firstName, lastName, slug: value.replaceAll(/\s+/g, "-").toLocaleLowerCase() });
-}).get(function () {
+    this.set({
+      firstName,
+      lastName,
+      slug: value.replaceAll(/\s+/g, "-").toLocaleLowerCase(),
+    });
+  })
+  .get(function () {
     return this.firstName + " " + this.lastName;
+  });
+
+userSchema.pre("findOneAndUpdate", async function (next) {
+  const update: any = this.getUpdate();
+
+  if (update.updateEmailOTP) {
+    update.updateEmailOTP = await generateHash(update.updateEmailOTP);
+    update.updateEmailOTPExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+  }
+
+  if (update.twoSetupVerificationCode) {
+    update.twoSetupVerificationCode = await generateHash(
+      update.twoSetupVerificationCode
+    );
+    update.twoSetupVerificationCodeExpiresAt = new Date(
+      Date.now() + 10 * 60 * 1000
+    );
+  }
+
+  this.setUpdate(update);
 });
 
-userSchema.pre("findOneAndUpdate",
-    async function (next) {
+userSchema.pre(
+  "save",
+  async function (
+    this: HUserDocument & { wasNew: boolean; OTPCode?: string },
+    next
+  ) {
+    this.wasNew = this.isNew;
 
-        const update: any = this.getUpdate();
+    const modifiedPaths = this.modifiedPaths();
 
-        if (update.updateEmailOTP) {
-            update.updateEmailOTP = await generateHash(update.updateEmailOTP)
-            update.updateEmailOTPExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-        }
+    if (modifiedPaths.includes("password"))
+      this.password = await generateHash(this.password);
 
-        if (update.twoSetupVerificationCode) {
-            update.twoSetupVerificationCode = await generateHash(update.twoSetupVerificationCode)
-            update.twoSetupVerificationCodeExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
-        }
-
-        this.setUpdate(update)
-    });
-
-
-
-
-userSchema.pre("save",
-    async function (this: HUserDocument & { wasNew: boolean; OTPCode?: string }, next) {
-
-        this.wasNew = this.isNew;
-
-        const modifiedPaths = this.modifiedPaths();
-
-        if (modifiedPaths.includes("password"))
-            this.password = await generateHash(this.password);
-
-        if (modifiedPaths.includes("confirmEmailOTP") && this.confirmEmailOTP) {
-            this.OTPCode = this.confirmEmailOTP;
-            this.confirmEmailOTP = await generateHash(this.confirmEmailOTP);
-        }
-
-    });
-
-
-
-
+    if (modifiedPaths.includes("confirmEmailOTP") && this.confirmEmailOTP) {
+      this.OTPCode = this.confirmEmailOTP;
+      this.confirmEmailOTP = await generateHash(this.confirmEmailOTP);
+    }
+  }
+);
 
 userSchema.post("save", async function (next) {
-    const that = this as HUserDocument & { wasNew: boolean, OTPCode?: string }
-    if (that.wasNew && that.OTPCode)
-        emailEvent.emit("confirmEmail", { to: this.email, OTPCode: that.OTPCode });
+  const that = this as HUserDocument & { wasNew: boolean; OTPCode?: string };
+  if (that.wasNew && that.OTPCode)
+    emailEvent.emit("confirmEmail", { to: this.email, OTPCode: that.OTPCode });
 });
 
 userSchema.pre(["updateOne", "findOne", "find"], function (next) {
-    const query = this.getQuery();
-    if (query.pranoId === false) {
-        this.setQuery({ ...query });
-    }
-    else {
-        this.setQuery({ ...query, freezeedAt: { $exists: false } });
-    }
-    next()
+  const query = this.getQuery();
+  if (query.pranoId === false) {
+    this.setQuery({ ...query });
+  } else {
+    this.setQuery({ ...query, freezeedAt: { $exists: false } });
+  }
+  next();
 });
 
 export const UserModel = models.User || model<IUser>("User", userSchema);

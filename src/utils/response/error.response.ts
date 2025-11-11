@@ -67,7 +67,7 @@ export class UnAuthorizedException extends ApplicationException {
 
 export class ForbiddenException extends ApplicationException {
     constructor(
-        message: string =  "You dont have permission to perform this action",
+        message: string =  "You don't have permission to perform this action",
         statusCode: number = 403,
         cause?: unknown
     ) {

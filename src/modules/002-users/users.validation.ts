@@ -88,7 +88,7 @@ export const sendFriendRequest = {
     })
 }
 
-export const acceptFriendRequst = {
+export const acceptFriendRequest = {
     params: z.strictObject({
         requestId: generalFields.id
     })
@@ -99,8 +99,8 @@ export const removeFriend = {
 }
 
 
-export const cancelFriendRequst = {
-    params: acceptFriendRequst.params.extend({})
+export const cancelFriendRequest = {
+    params: acceptFriendRequest.params.extend({})
 }
 
 
