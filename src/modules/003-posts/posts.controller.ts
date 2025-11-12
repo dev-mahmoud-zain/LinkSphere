@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { PostService } from "./posts.srevice";
+import { PostService } from "./posts.service";
 import {
   authenticationMiddleware,
-  authorizationMiddleware,
 } from "../../middlewares/authentication.middleware";
 import {
   cloudFileUpload,
@@ -12,7 +11,6 @@ import {
 import { validationMiddleware } from "../../middlewares/validation.middleware";
 import * as validation from "./posts.validation";
 import { router as commentsRouter } from "../004-comments/index";
-import { endPoints } from "./posts.authorization";
 
 const postService = new PostService();
 

@@ -303,7 +303,7 @@ class AuthenticationServices {
             throw new BadRequestException("Confirm Your Email To Login")
         }
 
-        if (user.freezeedAt) {
+        if (user.freezedAt) {
             throw new NotFoundException("User Not Found")
         }
 

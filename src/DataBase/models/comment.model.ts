@@ -19,8 +19,8 @@ export interface IComment {
   tags?: Types.ObjectId[];
   likes?: Types.ObjectId[];
 
-  freezeedAt?: Date;
-  freezeedBy?: Types.ObjectId;
+  freezedAt?: Date;
+  freezedBy?: Types.ObjectId;
 
   restoredAt?: Date;
   restoredBy?: Types.ObjectId;
@@ -67,8 +67,8 @@ const commentSchema = new Schema<IComment>(
     tags: { type: [Schema.Types.ObjectId], ref: "User" },
     likes: { type: [Schema.Types.ObjectId], ref: "User" },
 
-    freezeedAt: Date,
-    freezeedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    freezedAt: Date,
+    freezedBy: { type: Schema.Types.ObjectId, ref: "User" },
 
     restoredAt: Date,
     restoredBy: { type: Schema.Types.ObjectId, ref: "User" },
@@ -105,7 +105,7 @@ commentSchema.pre(["updateOne", "findOne", "find"], function (next) {
   if (query.pranoId === false) {
     this.setQuery({ ...query });
   } else {
-    this.setQuery({ ...query, freezeedAt: { $exists: false } });
+    this.setQuery({ ...query, freezedAt: { $exists: false } });
   }
   next();
 });

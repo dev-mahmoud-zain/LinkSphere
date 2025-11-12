@@ -67,8 +67,8 @@ export interface IUser {
   forgetPasswordCount?: number;
   forgetPasswordBlockExpiresAt?: Date;
 
-  freezeedAt?: Date;
-  freezeedBy?: Schema.Types.ObjectId;
+  freezedAt?: Date;
+  freezedBy?: Schema.Types.ObjectId;
   restoredAt?: Date;
   restoredBy?: Schema.Types.ObjectId;
 
@@ -145,8 +145,8 @@ const userSchema = new Schema<IUser>(
     forgetPasswordCount: { type: Number, min: 0, max: 5 },
     forgetPasswordBlockExpiresAt: { type: Date },
 
-    freezeedAt: { type: Date },
-    freezeedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    freezedAt: { type: Date },
+    freezedBy: { type: Schema.Types.ObjectId, ref: "User" },
 
     restoredAt: { type: Date },
     restoredBy: { type: Schema.Types.ObjectId, ref: "User" },
@@ -234,7 +234,7 @@ userSchema.pre(["updateOne", "findOne", "find"], function (next) {
   if (query.pranoId === false) {
     this.setQuery({ ...query });
   } else {
-    this.setQuery({ ...query, freezeedAt: { $exists: false } });
+    this.setQuery({ ...query, freezedAt: { $exists: false } });
   }
   next();
 });

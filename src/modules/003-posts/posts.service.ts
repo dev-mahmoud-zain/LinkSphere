@@ -5,19 +5,14 @@ import {
   PostRepository,
   UserRepository,
 } from "../../DataBase/repository";
-import {
-  AvailabilityEnum,
-  HPostDocument,
-  PostModel,
-} from "../../DataBase/models/post.model";
-import { UserModel } from "../../DataBase/models/user.model";
+import { AvailabilityEnum, PostModel } from "../../DataBase/models/post.model";
+import { RoleEnum, UserModel } from "../../DataBase/models/user.model";
 import {
   BadRequestException,
   NotFoundException,
 } from "../../utils/response/error.response";
 import { I_CreatePostInputs } from "./dto/posts.dto";
 import { v4 as uuid } from "uuid";
-import { deleteFolderByPrefix } from "../../utils/multer/s3.config";
 import { Types } from "mongoose";
 import { CommentFlagEnum, CommentModel } from "../../DataBase/models";
 import { connectedSockets, getIo } from "../005-gateway";
@@ -439,7 +434,7 @@ export class PostService {
     const posts = await this.postModel.find({
       filter: {
         createdBy: userId,
-        freezeedAt: { $exists: true },
+        freezedAt: { $exists: true },
         pranoId: false,
       },
       page: page,
@@ -699,12 +694,12 @@ export class PostService {
     const post = await this.postModel.findOneAndUpdate({
       filter: {
         _id: postId,
-        freezeedAt: { $exists: false },
-        freezeedBy: { $exists: false },
+        freezedAt: { $exists: false },
+        freezedBy: { $exists: false },
       },
       updateData: {
-        freezeedAt: new Date(),
-        freezeedBy: userId,
+        freezedAt: new Date(),
+        freezedBy: userId,
       },
     });
 
@@ -715,20 +710,20 @@ export class PostService {
     await this.commentModel.updateMany(
       {
         createdBy: userId,
-        freezeedAt: { $exists: false },
-        freezeedBy: { $exists: false },
+        freezedAt: { $exists: false },
+        freezedBy: { $exists: false },
       },
       {
         $set: {
-          freezeedAt: new Date(),
-          freezeedBy: userId,
+          freezedAt: new Date(),
+          freezedBy: userId,
         },
       }
     );
 
     return successResponse({
       res,
-      message: "Post freezeed Success",
+      message: "Post freezed Success",
     });
   };
 
@@ -739,8 +734,8 @@ export class PostService {
     const post = await this.postModel.findOneAndUpdate({
       filter: {
         _id: postId,
-        freezeedAt: { $exists: true },
-        freezeedBy: userId,
+        freezedAt: { $exists: true },
+        freezedBy: userId,
         pranoId: false,
       },
       updateData: {
@@ -749,23 +744,23 @@ export class PostService {
           restoredBy: userId,
         },
         $unset: {
-          freezeedAt: "",
-          freezeedBy: "",
+          freezedAt: "",
+          freezedBy: "",
         },
       },
     });
 
     if (!post) {
       throw new NotFoundException(
-        "Post Not Found Or No Autherized To Unfreeze"
+        "Post Not Found Or No Authorized To Unfreeze"
       );
     }
 
     await this.commentModel.updateMany(
       {
         createdBy: userId,
-        freezeedAt: { $exists: true },
-        freezeedBy: { $exists: true },
+        freezedAt: { $exists: true },
+        freezedBy: { $exists: true },
       },
       {
         $set: {
@@ -773,31 +768,36 @@ export class PostService {
           restoredBy: userId,
         },
         $unset: {
-          freezeedAt: "",
-          freezeedBy: "",
+          freezedAt: "",
+          freezedBy: "",
         },
       }
     );
 
     return successResponse({
       res,
-      message: "Post Un freezeed Success",
+      message: "Post Un freezed Success",
     });
   };
 
   deletePost = async (req: Request, res: Response): Promise<Response> => {
     const { postId } = req.params;
-    const userId = req.tokenDecoded?._id;
 
     const post = await this.postModel.findOne({
       filter: {
         _id: postId,
-        createdBy: userId,
       },
     });
 
     if (!post) {
-      throw new NotFoundException("Post Not Found Or No Authorized To Remove");
+      throw new NotFoundException("Post Not Found");
+    }
+
+    if (
+      req.user?.role === RoleEnum.user &&
+      post?.createdBy.toString() !== req.user._id.toString()
+    ) {
+      throw new NotFoundException("Not Authorized To Remove Post");
     }
 
     await Promise.all([
