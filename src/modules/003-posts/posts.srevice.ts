@@ -330,7 +330,6 @@ export class PostService {
     }
 
     if (uploadedFiles.length) {
-
       if (totalIfAdded > 5) {
         throw new BadRequestException("Max Attachments Limit Exceeded", {
           issues: [
@@ -790,24 +789,32 @@ export class PostService {
     const { postId } = req.params;
     const userId = req.tokenDecoded?._id;
 
-    const post = (await this.postModel.findOne({
+    const post = await this.postModel.findOne({
       filter: {
         _id: postId,
         createdBy: userId,
       },
-    })) as unknown as HPostDocument;
+    });
 
     if (!post) {
       throw new NotFoundException("Post Not Found Or No Authorized To Remove");
     }
 
-    await this.postModel.deleteOne({
-      _id: postId,
-    });
+    await Promise.all([
+      this.postModel.deleteOne({
+        _id: postId,
+      }),
 
-    if (post.attachments?.length && post.assetsFolderId) {
-      await deleteFolderFromCloudinary(`LinkSphere/users/${userId}/posts/${post.assetsFolderId}`)
-    }
+      post.assetsFolderId
+        ? deleteFolderFromCloudinary(
+            `LinkSphere/users/${post.createdBy}/posts/${post.assetsFolderId}`
+          )
+        : Promise.resolve(),
+
+      this.commentModel.deleteMany({
+        postId,
+      }),
+    ]);
 
     return successResponse({
       res,

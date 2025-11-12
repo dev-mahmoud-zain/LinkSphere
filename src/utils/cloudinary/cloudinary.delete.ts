@@ -53,41 +53,32 @@ export async function deleteMultiFromCloudinary(
 
 
 
-export async function deleteFolderFromCloudinary(folderPath : string) {
-
+export async function deleteFolderFromCloudinary(folderPath: string) {
   try {
-    // Step 1: Delete all files under this folder
+    // Step 1: Delete all resources under this folder
     await cloudinary.api.delete_resources_by_prefix(folderPath);
 
-    // Step 2: List and delete subfolders recursively
+    // Step 2: Get subfolders
     const { folders } = await cloudinary.api.sub_folders(folderPath);
+
+    // Step 3: Delete subfolders recursively
     for (const sub of folders) {
       await deleteFolderFromCloudinary(sub.path);
     }
 
-    // Step 3: Check if folder is empty now
-    const remaining = await cloudinary.api.resources({
-      type: "upload",
-      prefix: folderPath,
-      max_results: 1,
+    // Step 4: Try to delete the folder itself (even if no resources)
+    await cloudinary.api.delete_folder(folderPath).catch(() => {
+      // ignore if doesn't exist
     });
 
-    if (remaining.resources.length === 0) {
-      // Step 4: Delete the folder itself
-      await cloudinary.api.delete_folder(folderPath);
-    }
-  } catch (error : any) {
-
-
-    if (error.error.http_code === 404) {
+  } catch (error: any) {
+    if (error?.error?.http_code === 404) {
       console.warn(`⚠️ Folder not found: ${folderPath}`);
-      return; // تجاهل بس ما ترميش
+      return;
     }
-
 
     throw new ApplicationException(
       `Error deleting folder "${folderPath}": ${error.message || error}`
     );
-
   }
 }

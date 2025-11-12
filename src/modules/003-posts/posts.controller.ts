@@ -96,6 +96,7 @@ router.patch(
 
 router.delete(
   "/:postId",
+  authenticationMiddleware(),
   validationMiddleware(validation.deletePost),
   postService.deletePost
 );
