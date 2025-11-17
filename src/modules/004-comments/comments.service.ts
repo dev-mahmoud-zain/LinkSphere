@@ -85,13 +85,14 @@ export class Comments {
       throw new BadRequestException("User Cannot Mention Himself");
     }
 
-    let commentAttachment;
+    let commentAttachment ;
 
     if (attachment) {
-      commentAttachment = (await uploadToCloudinary(
+      const {public_id , secure_url} = (await uploadToCloudinary(
         attachment as Express.Multer.File,
         `LinkSphere/users/${post.createdBy}/posts/${post.assetsFolderId}/comments`
-      )) as IImage;
+      )) ;
+      commentAttachment = {public_id,url:secure_url}
     }
 
     const [comment] =
@@ -407,10 +408,11 @@ export class Comments {
     let replyAttachment;
 
     if (attachment) {
-      replyAttachment = await uploadToCloudinary(
+      const {public_id , secure_url} = await uploadToCloudinary(
         attachment as Express.Multer.File,
         `LinkSphere/users/${post.createdBy}/posts/${post.assetsFolderId}/comments/${comment.id}/replies`
       );
+      replyAttachment={public_id,url:secure_url}
     }
 
     const [reply] =

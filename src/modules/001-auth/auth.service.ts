@@ -261,7 +261,7 @@ class AuthenticationServices {
             data: [{
                 userName: name as string,
                 email: email as string,
-                picture: picture as string,
+                // picture: picture as string,
                 confirmedAt: new Date()
             }]
         });

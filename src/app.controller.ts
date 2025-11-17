@@ -26,7 +26,6 @@ import { GQLSchema } from "./modules/graphql";
 import { authenticationMiddleware } from "./middlewares/authentication.middleware";
 
 import morgan from "morgan";
-import { getPreSignedUrl } from "./utils/multer/s3.config";
 
 // App Start Point
 export default async function bootstrap(): Promise<void> {
@@ -88,15 +87,6 @@ export default async function bootstrap(): Promise<void> {
 
   app.use("/chat", chatRouter);
 
-  app.get("/image/*key", async (req: Request, res: Response) => {
-    const key = req.params.key as unknown as string[];
-
-    const url = await getPreSignedUrl({ Key: key.join("/") });
-
-    res.json({ url });
-  });
-
-  // Global Error Handler
 
   app.use(globalErrorHandler);
 

@@ -44,7 +44,7 @@ export async function uploadMultiImagesToCloudinary(
 
       images.push({
         public_id: result.public_id,
-        url: result.url
+        url: result.secure_url
       });
 
 

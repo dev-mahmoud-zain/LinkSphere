@@ -240,7 +240,7 @@ export class UserService {
   ): Promise<Response> => {
     const { _id } = req.tokenDecoded as JwtPayload;
 
-    const { public_id, url } = await uploadToCloudinary(
+    const { public_id, secure_url } = await uploadToCloudinary(
       req.file as Express.Multer.File,
       `LinkSphere/users/${_id}/profile-pictures`
     );
@@ -250,7 +250,7 @@ export class UserService {
         _id,
       },
       {
-        picture: { public_id, url },
+        picture: { public_id, url:secure_url },
       }
     );
 
@@ -261,7 +261,7 @@ export class UserService {
     return successResponse({
       res,
       message: "Profile Picture Uploaded Success",
-      data: { url },
+      data: { url:secure_url },
     });
   };
 
@@ -272,7 +272,7 @@ export class UserService {
       throw new BadRequestException("No file uploaded");
     }
 
-    const { public_id, url } = await uploadToCloudinary(
+    const { public_id, secure_url } = await uploadToCloudinary(
       req.file as Express.Multer.File,
       `LinkSphere/users/${_id}/profile-covers`
     );
@@ -280,14 +280,14 @@ export class UserService {
     await this.userModel.updateOne(
       { _id },
       {
-        coverImage: { public_id, url },
+        coverImage: { public_id, url :secure_url },
       }
     );
 
     return successResponse({
       res,
       message: "Profile Picture Uploaded Success",
-      data: { url },
+      data: { url:secure_url },
     });
   };
 
