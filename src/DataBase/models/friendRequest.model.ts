@@ -23,4 +23,22 @@ const friendRequestSchema = new Schema<IFriendRequest>({
     strictQuery: true,
 });
 
+
+friendRequestSchema.virtual("sender", {
+  ref: "User",
+  localField: "sendBy",
+  foreignField: "_id",
+  justOne: true,
+});
+
+friendRequestSchema.virtual("receiver", {
+  ref: "User",
+  localField: "sendTo",
+  foreignField: "_id",
+  justOne: true,
+});
+
+friendRequestSchema.set("toJSON", { virtuals: true });
+friendRequestSchema.set("toObject", { virtuals: true });
+
 export const FriendRequestModel = models.FriendRequestModel || model("FriendRequest", friendRequestSchema);

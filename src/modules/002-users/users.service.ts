@@ -56,7 +56,7 @@ export class UserService {
     await this.userModel.findOneAndUpdate({
       filter: {
         _id: userId,
-        pranoId:false
+        pranoId: false,
       },
       updateData: {
         set: {
@@ -250,7 +250,7 @@ export class UserService {
         _id,
       },
       {
-        picture: { public_id, url:secure_url },
+        picture: { public_id, url: secure_url },
       }
     );
 
@@ -261,7 +261,7 @@ export class UserService {
     return successResponse({
       res,
       message: "Profile Picture Uploaded Success",
-      data: { url:secure_url },
+      data: { url: secure_url },
     });
   };
 
@@ -280,14 +280,14 @@ export class UserService {
     await this.userModel.updateOne(
       { _id },
       {
-        coverImage: { public_id, url :secure_url },
+        coverImage: { public_id, url: secure_url },
       }
     );
 
     return successResponse({
       res,
       message: "Profile Picture Uploaded Success",
-      data: { url:secure_url },
+      data: { url: secure_url },
     });
   };
 
@@ -348,6 +348,43 @@ export class UserService {
     return successResponse({
       res,
       message: "Cover Image Deleted Success",
+    });
+  };
+
+  searchUser = async (req: Request, res: Response): Promise<Response> => {
+    const { key, page, limit } = req.query;
+
+    const pageNum = page ? Number(page) : 1;
+    const limitNum = limit ? Number(limit) : 10;
+
+    const users = await this.userModel.find({
+      filter: {
+        $or: [
+          { userName: { $regex: new RegExp(`\\b${key}`, "i") } },
+          { firstName: { $regex: new RegExp(`\\b${key}`, "i") } },
+          { lastName: { $regex: new RegExp(`\\b${key}`, "i") } },
+          { email: { $regex: new RegExp(`\\b${key}`, "i") } },
+        ],
+      },
+      page: pageNum,
+      limit: limitNum,
+      projection: {
+        firstName: true,
+        lastName: true,
+        slug: true,
+        picture: true,
+        userName: true,
+      },
+    });
+
+    return successResponse({
+      res,
+      data: {
+        count: users.data.length,
+        page: users.pagination.page,
+        limit: users.pagination.limit,
+        users: users.data,
+      },
     });
   };
 
@@ -562,6 +599,17 @@ export class UserService {
         sendTo: userId,
         acceptedAt: { $exists: false },
       },
+      options: {
+        populate: [
+          {
+            path: "sender",
+            options: {
+              select:
+                "_id firstName lastName userName picture",
+            },
+          },
+        ],
+      },
     });
 
     return successResponse({
@@ -573,7 +621,7 @@ export class UserService {
     });
   };
 
-  getSentFriendRequests= async (
+  getSentFriendRequests = async (
     req: Request,
     res: Response
   ): Promise<Response> => {
@@ -583,6 +631,17 @@ export class UserService {
       filter: {
         sendBy: userId,
         acceptedAt: { $exists: false },
+      },
+      options: {
+        populate: [
+          {
+            path: "receiver",
+            options: {
+              select:
+                "_id firstName lastName userName picture",
+            },
+          },
+        ],
       },
     });
 
@@ -842,7 +901,6 @@ export class UserService {
       throw new BadRequestException("Fail To freeze Account");
     }
 
-
     // freeze All Posts And Comments For User
     await this.postModel.updateMany(
       {
@@ -949,8 +1007,9 @@ export class UserService {
   deleteAccount = async (req: Request, res: Response): Promise<Response> => {
     const { userId } = req.params;
 
-    const user = await this.userModel.findOne({ filter: { _id: userId ,pranoId: false}});
-
+    const user = await this.userModel.findOne({
+      filter: { _id: userId, pranoId: false },
+    });
 
     if (!user) {
       throw new NotFoundException("User Not Found");

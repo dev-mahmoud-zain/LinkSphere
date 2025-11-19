@@ -117,6 +117,7 @@ async updateOne(
     }
   };
 
+
   delete (finalUpdate as any).$inc?.$inc;
 
   return await this.model.updateOne(

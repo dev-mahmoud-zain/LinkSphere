@@ -1,130 +1,186 @@
 import { Router } from "express";
 import usersService from "./users.service";
-import { authenticationMiddleware, authorizationMiddleware } from "../../middlewares/authentication.middleware";
-import { cloudFileUpload, fileValidation, StorageEnum } from "../../utils/multer/cloud.,multer";
+import {
+  authenticationMiddleware,
+  authorizationMiddleware,
+} from "../../middlewares/authentication.middleware";
+import {
+  cloudFileUpload,
+  fileValidation,
+  StorageEnum,
+} from "../../utils/multer/cloud.,multer";
 import { validationMiddleware } from "../../middlewares/validation.middleware";
 import * as usersValidation from "./users.validation";
 import { endPoints } from "./users.authorization";
-import { router as chatRouter } from "../006-chat"
+import { router as chatRouter } from "../006-chat";
 
 const router = Router();
-router.use("/:userId/chat", chatRouter)
+router.use("/:userId/chat", chatRouter);
 // ============================ Profile Management =============================
 
-router.get("/profile",
-    authenticationMiddleware(),
-    usersService.profile);
+router.patch(
+  "/profile-picture",
+  authenticationMiddleware(),
+  cloudFileUpload({
+    validation: fileValidation.image,
+    storageApproach: StorageEnum.memory,
+  }).single("image"),
+  usersService.uploadProfilePicture
+);
 
-router.get("/user/:userId",
-    authenticationMiddleware(),
-    usersService.getUserById);
+router.patch(
+  "/profile-cover",
+  authenticationMiddleware(),
+  cloudFileUpload({
+    validation: fileValidation.image,
+    storageApproach: StorageEnum.memory,
+  }).single("image"),
+  usersService.uploadCoverImage
+);
 
-router.patch("/profile-picture",
-    authenticationMiddleware(),
-    cloudFileUpload({ validation: fileValidation.image, storageApproach: StorageEnum.memory }).single("image")
-    , usersService.uploadProfilePicture);
+router.delete(
+  "/profile-picture",
+  authenticationMiddleware(),
+  usersService.deleteProfilePicture
+);
 
-router.patch("/profile-cover",
-    authenticationMiddleware(),
-    cloudFileUpload({ validation: fileValidation.image, storageApproach: StorageEnum.memory }).single("image")
-    , usersService.uploadCoverImage);
-
-router.delete("/profile-picture",
-    authenticationMiddleware(),
-    usersService.deleteProfilePicture);
-
-router.delete("/profile-cover-image",
-    authenticationMiddleware(),
-    usersService.deleteCoverImages);
-
-
+router.delete(
+  "/profile-cover-image",
+  authenticationMiddleware(),
+  usersService.deleteCoverImages
+);
 
 // =========================  Friendship Management ============================
 
+router.get(
+  "/friends-list",
+  authenticationMiddleware(),
+  usersService.getFriendsList
+);
 
-router.get("/friends-list",
-    authenticationMiddleware(),
-    usersService.getFriendsList);
+router.post(
+  "/friend-request/:userId",
+  authenticationMiddleware(),
+  validationMiddleware(usersValidation.sendFriendRequest),
+  usersService.sendFriendRequest
+);
 
-router.post("/friend-request/:userId",
-    authenticationMiddleware(),
-    validationMiddleware(usersValidation.sendFriendRequest),
-    usersService.sendFriendRequest);
+router.patch(
+  "/accept-friend-request/:requestId",
+  authenticationMiddleware(),
+  validationMiddleware(usersValidation.acceptFriendRequest),
+  usersService.acceptFriendRequest
+);
 
-router.patch("/accept-friend-request/:requestId",
-    authenticationMiddleware(),
-    validationMiddleware(usersValidation.acceptFriendRequest),
-    usersService.acceptFriendRequest);
+router.delete(
+  "/cancel-friend-request/:requestId",
+  authenticationMiddleware(),
+  validationMiddleware(usersValidation.cancelFriendRequest),
+  usersService.cancelFriendRequest
+);
 
-router.delete("/cancel-friend-request/:requestId",
-    authenticationMiddleware(),
-    validationMiddleware(usersValidation.cancelFriendRequest),
-    usersService.cancelFriendRequest);
+router.delete(
+  "/remove-friend/:userId",
+  authenticationMiddleware(),
+  validationMiddleware(usersValidation.removeFriend),
+  usersService.removeFriend
+);
 
-router.delete("/remove-friend/:userId",
-    authenticationMiddleware(),
-    validationMiddleware(usersValidation.removeFriend),
-    usersService.removeFriend);
+router.get(
+  "/received-friend-requests/",
+  authenticationMiddleware(),
+  usersService.getReceivedFriendRequests
+);
 
-router.get("/received-friend-requests/",
-    authenticationMiddleware(),
-    usersService.getReceivedFriendRequests);
-
-    router.get("/sent-friend-requests/",
-    authenticationMiddleware(),
-    usersService.getSentFriendRequests);
+router.get(
+  "/sent-friend-requests/",
+  authenticationMiddleware(),
+  usersService.getSentFriendRequests
+);
 
 // ========================= User Information Updates ==========================
 
-router.patch("/update-basic-info",
-    authenticationMiddleware(),
-    validationMiddleware(usersValidation.updateBasicInfo),
-    usersService.updateBasicInfo);
+router.patch(
+  "/update-basic-info",
+  authenticationMiddleware(),
+  validationMiddleware(usersValidation.updateBasicInfo),
+  usersService.updateBasicInfo
+);
 
-router.patch("/update-email",
-    authenticationMiddleware(),
-    validationMiddleware(usersValidation.updateEmail),
-    usersService.updateEmail);
+router.patch(
+  "/update-email",
+  authenticationMiddleware(),
+  validationMiddleware(usersValidation.updateEmail),
+  usersService.updateEmail
+);
 
-router.patch("/change-password",
-    authenticationMiddleware(),
-    validationMiddleware(usersValidation.changePassword),
-    usersService.changePassword);
+router.patch(
+  "/change-password",
+  authenticationMiddleware(),
+  validationMiddleware(usersValidation.changePassword),
+  usersService.changePassword
+);
 
-
-router.patch("/confirm-update-email",
-    authenticationMiddleware(),
-    validationMiddleware(usersValidation.confirmUpdateEmail),
-    usersService.confirmUpdateEmail);
-
+router.patch(
+  "/confirm-update-email",
+  authenticationMiddleware(),
+  validationMiddleware(usersValidation.confirmUpdateEmail),
+  usersService.confirmUpdateEmail
+);
 
 // ============================= Account Control ===============================
 
-router.delete("/freeze/{:userId}",
-    authorizationMiddleware(endPoints.freezeAccount),
-    validationMiddleware(usersValidation.freezeAccount),
-    usersService.freezeAccount);
+router.delete(
+  "/freeze/{:userId}",
+  authorizationMiddleware(endPoints.freezeAccount),
+  validationMiddleware(usersValidation.freezeAccount),
+  usersService.freezeAccount
+);
 
-router.patch("/un-freeze/:userId/admin",
-    authorizationMiddleware(endPoints.unfreezeAccountByAdmin),
-    validationMiddleware(usersValidation.unfreezeAccountByAdmin),
-    usersService.unfreezeAccountByAdmin);
+router.patch(
+  "/un-freeze/:userId/admin",
+  authorizationMiddleware(endPoints.unfreezeAccountByAdmin),
+  validationMiddleware(usersValidation.unfreezeAccountByAdmin),
+  usersService.unfreezeAccountByAdmin
+);
 
-router.patch("/un-freeze/me",
-    validationMiddleware(usersValidation.unfreezeAccountByAccountAuthor),
-    usersService.unfreezeAccountByAccountAuthor);
+router.patch(
+  "/un-freeze/me",
+  validationMiddleware(usersValidation.unfreezeAccountByAccountAuthor),
+  usersService.unfreezeAccountByAccountAuthor
+);
 
-router.delete("/delete/:userId",
-    authorizationMiddleware(endPoints.deleteAccount),
-    validationMiddleware(usersValidation.deleteAccount),
-    usersService.deleteAccount);
+router.delete(
+  "/delete/:userId",
+  authorizationMiddleware(endPoints.deleteAccount),
+  validationMiddleware(usersValidation.deleteAccount),
+  usersService.deleteAccount
+);
 
 // ============================= Admin Control ===============================
 
+router.get(
+  "/change-role/:id",
+  authorizationMiddleware(endPoints.changeRole),
+  validationMiddleware(usersValidation.changeRole),
+  usersService.changeRole
+);
 
-router.get("/change-role/:id",
-    authorizationMiddleware(endPoints.changeRole),
-    validationMiddleware(usersValidation.changeRole),
-    usersService.changeRole);
+// ============================ Users Retrieval =============================
+
+router.get("/profile", authenticationMiddleware(), usersService.profile);
+
+router.get(
+  "/user/:userId",
+  authenticationMiddleware(),
+  usersService.getUserById
+);
+
+router.get(
+  "/search",
+  authenticationMiddleware(),
+  validationMiddleware(usersValidation.searchUser),
+  usersService.searchUser
+);
 
 export default router;

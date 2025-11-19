@@ -114,6 +114,13 @@ export const changeRole = {
     })
 }
 
+export const searchUser ={
+        query : z.strictObject({
+        key: z.string(),
+        page: z.coerce.number().positive().min(1).max(10).optional(),
+        limit: z.coerce.number().positive().min(1).max(50).optional()
+    }),
+}
 
 // GQL 
 
