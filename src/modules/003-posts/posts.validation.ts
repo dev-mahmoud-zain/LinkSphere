@@ -1,6 +1,6 @@
 import z from "zod";
 import {
-  AllowCommentsEnum,
+  allowCommentsEnum,
   AvailabilityEnum,
 } from "../../DataBase/models/post.model";
 import { generalFields } from "../../middlewares/validation.middleware";
@@ -19,8 +19,8 @@ export const createPost = {
       availability: z.enum(AvailabilityEnum).default(AvailabilityEnum.public),
 
       allowCommentsEnum: z
-        .enum(AllowCommentsEnum)
-        .default(AllowCommentsEnum.allow),
+        .enum(allowCommentsEnum)
+        .default(allowCommentsEnum.allow),
 
       tags: z.array(generalFields.id).max(10).optional(),
     })
@@ -63,7 +63,7 @@ export const createPost = {
 
 //       availability: z.enum(AvailabilityEnum).optional(),
 
-//       allowCommentsEnum: z.enum(AllowCommentsEnum).optional(),
+//       allowCommentsEnum: z.enum(allowCommentsEnum).optional(),
 
 //       tags: z.array(generalFields.id).max(10).optional(),
 //       removedTags: z.array(generalFields.id).max(10).optional(),
@@ -111,7 +111,7 @@ export const updatePostContent = {
 
       availability: z.enum(AvailabilityEnum).optional(),
 
-      allowComments: z.enum(AllowCommentsEnum).optional(),
+      allowComments: z.enum(allowCommentsEnum).optional(),
 
       addToTags: z.array(generalFields.id).max(10).optional(),
 

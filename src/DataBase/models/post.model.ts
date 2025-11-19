@@ -6,7 +6,7 @@ import { IImage } from "../../utils/cloudinary/cloudinary.interface";
 
 const userModel = new UserRepository(UserModel);
 
-export enum AllowCommentsEnum {
+export enum allowCommentsEnum {
   allow = "allow",
   deny = "deny",
 }
@@ -27,10 +27,11 @@ export interface IPost {
   availability?: AvailabilityEnum;
   except?: Types.ObjectId[];
   only?: Types.ObjectId[];
-  allowComments: AllowCommentsEnum;
+  allowComments: allowCommentsEnum;
 
   tags?: Types.ObjectId[];
   likes?: Types.ObjectId[];
+  likesCount:number;
 
   freezedAt?: Date;
   freezedBy?: Types.ObjectId;
@@ -79,13 +80,14 @@ const postSchima = new Schema<IPost>(
 
     allowComments: {
       type: String,
-      enum: AllowCommentsEnum,
-      default: AllowCommentsEnum.allow,
+      enum: allowCommentsEnum,
+      default: allowCommentsEnum.allow,
     },
 
     tags: { type: [Schema.Types.ObjectId], ref: "User" },
     likes: { type: [Schema.Types.ObjectId], ref: "User" },
-
+    likesCount:{type:Number,default:0},
+    
     freezedAt: Date,
     freezedBy: { type: Schema.Types.ObjectId, ref: "User" },
 

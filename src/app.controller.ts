@@ -30,7 +30,7 @@ import morgan from "morgan";
 // App Start Point
 export default async function bootstrap(): Promise<void> {
   const app = express();
-  const port: Number | String = process.env.PORT || 5000;
+  const port: Number | String = process.env.PORT || 3000;
 
   // Third Party MiddleWares
   const limiter = rateLimit({
@@ -43,8 +43,10 @@ export default async function bootstrap(): Promise<void> {
 
   app.use(
     cors({
-      origin: ["http://localhost:4200", "https://link-sphere-seven.vercel.app"],
+      origin:"http://localhost:4200",
       credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization"],
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     })
   );
 
@@ -86,7 +88,6 @@ export default async function bootstrap(): Promise<void> {
   app.use("/posts", postsRouter);
 
   app.use("/chat", chatRouter);
-
 
   app.use(globalErrorHandler);
 

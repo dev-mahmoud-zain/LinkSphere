@@ -415,6 +415,7 @@ export class PostService {
       limit,
     });
 
+
     return successResponse({
       res,
       data: {
@@ -657,10 +658,10 @@ export class PostService {
     let message: string = "";
 
     if (post.likes?.includes(userId)) {
-      updateData = { $pull: { likes: userId } };
+      updateData = { $pull: { likes: userId },$inc:{likesCount:-1} };
       message = "Post Unlike Success";
     } else {
-      updateData = { $addToSet: { likes: userId } };
+      updateData = { $addToSet: { likes: userId },$inc:{likesCount:1}  };
       message = "Post liked Success";
     }
 
@@ -668,7 +669,8 @@ export class PostService {
       filter: {
         _id: postId,
       },
-      updateData,
+      updateData
+      
     });
 
     if (!action) {
@@ -685,6 +687,7 @@ export class PostService {
       res,
       message,
     });
+    
   };
 
   freezePost = async (req: Request, res: Response): Promise<Response> => {

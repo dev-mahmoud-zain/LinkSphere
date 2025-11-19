@@ -66,9 +66,13 @@ router.delete("/remove-friend/:userId",
     validationMiddleware(usersValidation.removeFriend),
     usersService.removeFriend);
 
-router.get("/friend-requests",
+router.get("/received-friend-requests/",
     authenticationMiddleware(),
-    usersService.GetFriendRequests);
+    usersService.getReceivedFriendRequests);
+
+    router.get("/sent-friend-requests/",
+    authenticationMiddleware(),
+    usersService.getSentFriendRequests);
 
 // ========================= User Information Updates ==========================
 

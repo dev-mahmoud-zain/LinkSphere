@@ -217,7 +217,6 @@ class AuthenticationServices {
         const user = await this.userModel.findOne({
             filter: {
                 email,
-                provider: ProviderEnum.google
             }
         })
 
@@ -225,16 +224,13 @@ class AuthenticationServices {
             throw new NotFoundException("Not Registered Account Or Registered With Another Provider");
         }
 
-
         const credentials = await this.tokenService.createLoginCredentials(user)
-
 
         return successResponse({
             res,
             info: "login Success",
             data: { credentials }
         })
-
 
     }
 

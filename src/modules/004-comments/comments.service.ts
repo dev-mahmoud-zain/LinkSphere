@@ -9,7 +9,7 @@ import {
   UserModel,
   PostModel,
   CommentModel,
-  AllowCommentsEnum,
+  allowCommentsEnum,
   HPostDocument,
   CommentFlagEnum,
   IPost,
@@ -24,7 +24,6 @@ import {
   I_UpdateCommentInputs,
 } from "./comments.dto";
 import { postAvailability } from "../003-posts";
-import { deleteFile, uploadFile } from "../../utils/multer/s3.config";
 import { Types } from "mongoose";
 import {
   deleteFolderFromCloudinary,
@@ -48,7 +47,7 @@ export class Comments {
       filter: {
         _id: postId,
         $or: postAvailability(req),
-        allowcomments: AllowCommentsEnum.allow,
+        allowComments: allowCommentsEnum.allow,
       },
     });
     if (!post) {
@@ -439,7 +438,7 @@ export class Comments {
     return successResponse({
       res,
       statusCode: 201,
-      info: "Replyed Success",
+      info: "Replied Success",
       data: reply,
     });
   };
@@ -471,12 +470,12 @@ export class Comments {
     let message: string = "";
 
     if (comment.likes?.includes(userId)) {
-      updateData = { $pull: { likes: userId } };
+      updateData = { $pull: { likes: userId },$inc:{likesCount:-1}  };
       message = `${
         comment.flag === CommentFlagEnum.comment ? "Comment" : "Reply"
-      } Unliked Success`;
+      } Unlinked Success`;
     } else {
-      updateData = { $addToSet: { likes: userId } };
+      updateData = { $addToSet: { likes: userId },$inc:{likesCount:1}  };
       message = `${
         comment.flag === CommentFlagEnum.comment ? "Comment" : "Reply"
       } Liked Success`;

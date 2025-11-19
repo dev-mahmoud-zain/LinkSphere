@@ -18,6 +18,7 @@ export interface IComment {
 
   tags?: Types.ObjectId[];
   likes?: Types.ObjectId[];
+  likesCount:number;
 
   freezedAt?: Date;
   freezedBy?: Types.ObjectId;
@@ -66,6 +67,7 @@ const commentSchema = new Schema<IComment>(
 
     tags: { type: [Schema.Types.ObjectId], ref: "User" },
     likes: { type: [Schema.Types.ObjectId], ref: "User" },
+    likesCount:{type:Number,default:0},
 
     freezedAt: Date,
     freezedBy: { type: Schema.Types.ObjectId, ref: "User" },

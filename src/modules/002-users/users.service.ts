@@ -551,7 +551,7 @@ export class UserService {
     });
   };
 
-  GetFriendRequests = async (
+  getReceivedFriendRequests = async (
     req: Request,
     res: Response
   ): Promise<Response> => {
@@ -560,6 +560,28 @@ export class UserService {
     const requests = await this.friendRequestModel.find({
       filter: {
         sendTo: userId,
+        acceptedAt: { $exists: false },
+      },
+    });
+
+    return successResponse({
+      res,
+      data: {
+        count: requests.data.length,
+        requests: requests.data,
+      },
+    });
+  };
+
+  getSentFriendRequests= async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    const userId = req.user?._id;
+
+    const requests = await this.friendRequestModel.find({
+      filter: {
+        sendBy: userId,
         acceptedAt: { $exists: false },
       },
     });
