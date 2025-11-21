@@ -26,7 +26,7 @@ import {
   FriendRequestModel,
   ChatModel,
 } from "../../DataBase/models";
-import {  Types } from "mongoose";
+import { Types } from "mongoose";
 import {
   deleteFolderFromCloudinary,
   deleteImageFromCloudinary,
@@ -345,19 +345,28 @@ export class UserService {
   };
 
   searchUser = async (req: Request, res: Response): Promise<Response> => {
-    const { key, page, limit } = req.query;
+
+     let { page, limit, key } = req.query as unknown as {
+      page: number;
+      limit: number;
+      key: string;
+    };
 
     const pageNum = page ? Number(page) : 1;
     const limitNum = limit ? Number(limit) : 10;
 
+    const words = key.trim().split(/\s+/);
+
+    const nameQuery = words.map((word) => ({
+      $or: [
+        { firstName: { $regex: new RegExp(word, "i") } },
+        { lastName: { $regex: new RegExp(word, "i") } },
+      ],
+    }));
+
     const users = await this.userModel.find({
       filter: {
-        $or: [
-          { userName: { $regex: new RegExp(`\\b${key}`, "i") } },
-          { firstName: { $regex: new RegExp(`\\b${key}`, "i") } },
-          { lastName: { $regex: new RegExp(`\\b${key}`, "i") } },
-          { email: { $regex: new RegExp(`\\b${key}`, "i") } },
-        ],
+       $and: nameQuery,
       },
       page: pageNum,
       limit: limitNum,
@@ -373,7 +382,7 @@ export class UserService {
     return successResponse({
       res,
       data: {
-        pagination:users.pagination,
+        pagination: users.pagination,
         users: users.data,
       },
     });
@@ -595,8 +604,7 @@ export class UserService {
           {
             path: "sender",
             options: {
-              select:
-                "_id firstName lastName userName picture",
+              select: "_id firstName lastName userName picture",
             },
           },
         ],
@@ -628,8 +636,7 @@ export class UserService {
           {
             path: "receiver",
             options: {
-              select:
-                "_id firstName lastName userName picture",
+              select: "_id firstName lastName userName picture",
             },
           },
         ],

@@ -51,4 +51,3 @@ export class PostRepository extends DataBaseRepository<IPost> {
 
 
 }
-

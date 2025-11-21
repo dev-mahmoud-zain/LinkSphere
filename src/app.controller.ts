@@ -16,6 +16,7 @@ import {
   initializeIo,
   postsRouter,
   usersRouter,
+  searchRouter
 } from "./modules/";
 import { globalErrorHandler } from "./utils/response/error.response";
 import connectToDataBase from "./DataBase/DB_Connection";
@@ -89,6 +90,9 @@ export default async function bootstrap(): Promise<void> {
 
   app.use("/chat", chatRouter);
 
+
+  app.use("/search",searchRouter)
+
   app.use(globalErrorHandler);
 
   // 404 Router
@@ -100,6 +104,9 @@ export default async function bootstrap(): Promise<void> {
       path: req.path,
     });
   });
+
+
+
 
   const httpServer = app.listen(port, () => {
     console.log("===================================");

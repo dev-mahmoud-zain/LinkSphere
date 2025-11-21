@@ -447,6 +447,7 @@ export class PostService {
     if (key && author) {
       const data = await this.postModel.find({
         filter: {
+          $or:postAvailability(req),
           content: { $regex: new RegExp(key, "i") },
         },
         options: {
