@@ -425,10 +425,11 @@ export class PostService {
   };
 
   searchPosts = async (req: Request, res: Response): Promise<Response> => {
-    let { page, limit, key } = req.query as unknown as {
+    let { page, limit, key ,author } = req.query as unknown as {
       page: number;
       limit: number;
       key: string;
+      author:string
     };
 
     const pageNum = page ? Number(page) : 1;
@@ -437,6 +438,13 @@ export class PostService {
     const posts = await this.postModel.find({
       filter: {
         content: { $regex: new RegExp(key, "i") },
+      },
+      options: {
+        populate: {
+          path: "author",
+          match:{userName:{$regex: new RegExp(key, "i") }},
+          select:"_id firstName lastName picture userName"
+        },
       },
       page: pageNum,
       limit: limitNum,
@@ -449,7 +457,6 @@ export class PostService {
         pagination: posts.pagination,
       },
     });
-    
   };
 
   getFreezedPosts = async (req: Request, res: Response): Promise<Response> => {

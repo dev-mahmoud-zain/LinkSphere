@@ -540,7 +540,7 @@ export class Comments {
         },
       });
 
-      // Delete Replys Attachments
+      // Delete Replies Attachments
       if (data.length) {
         try {
           deleteFolderFromCloudinary(
@@ -549,7 +549,7 @@ export class Comments {
         } catch (error) {}
       }
 
-      // Delete Replys
+      // Delete Replies
       await this.commentModel.deleteMany({
         postId,
         commentId,
