@@ -153,7 +153,6 @@ export const updatePostAttachments = {
   params: updatePostContent.params.extend({}),
   body: z
     .strictObject({
-
       attachments: z
         .array(generalFields.file(fileValidation.image))
         .max(5)
@@ -162,19 +161,17 @@ export const updatePostAttachments = {
       removeFromAttachments: z.array(z.string()).optional(),
     })
     .superRefine((data, context) => {
-
       if (!Object.values(data)?.length) {
         context.addIssue({
           code: "custom",
           message: "All Fields Are Empty",
         });
-
       }
-
 
       if (
         data.removeFromAttachments?.length &&
-        data.removeFromAttachments.length !== [...new Set(data.removeFromAttachments)].length
+        data.removeFromAttachments.length !==
+          [...new Set(data.removeFromAttachments)].length
       ) {
         context.addIssue({
           code: "custom",
@@ -182,11 +179,7 @@ export const updatePostAttachments = {
           message: "Duplicated Removed Attachments Ids",
         });
       }
-
-
-    })
-
-    
+    }),
 };
 
 export const getPost = {
@@ -202,16 +195,24 @@ export const getPosts = {
   }),
 };
 
-export const searchForPost={
-
-    query: z.strictObject({
-          key: z.string(),
-          author:z.string().optional(),
-          page: z.coerce.number().positive().min(1).max(10).optional(),
-          limit: z.coerce.number().positive().min(1).max(50).optional()
-  }),
-
-}
+export const searchForPost = {
+  query: z
+    .strictObject({
+      key: z.string().optional(),
+      author: z.string().optional(),
+      page: z.coerce.number().positive().min(1).max(10).optional(),
+      limit: z.coerce.number().positive().min(1).max(50).optional(),
+    })
+    .superRefine((data, context) => {
+      if (!data.key && !data.author) {
+        context.addIssue({
+          code: "custom",
+          path: ["content"],
+          message: "You must provide either a search keyword or an author name",
+        });
+      }
+    }),
+};
 
 export const likePost = {
   params: getPost.params.extend({}),

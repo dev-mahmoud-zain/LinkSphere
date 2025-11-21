@@ -5,7 +5,11 @@ import {
   PostRepository,
   UserRepository,
 } from "../../DataBase/repository";
-import { AvailabilityEnum, PostModel } from "../../DataBase/models/post.model";
+import {
+  AvailabilityEnum,
+  HPostDocument,
+  PostModel,
+} from "../../DataBase/models/post.model";
 import { RoleEnum, UserModel } from "../../DataBase/models/user.model";
 import {
   BadRequestException,
@@ -425,30 +429,97 @@ export class PostService {
   };
 
   searchPosts = async (req: Request, res: Response): Promise<Response> => {
-    let { page, limit, key ,author } = req.query as unknown as {
+    let { page, limit, key, author } = req.query as unknown as {
       page: number;
       limit: number;
       key: string;
-      author:string
+      author: string;
     };
 
     const pageNum = page ? Number(page) : 1;
     const limitNum = limit ? Number(limit) : 10;
 
-    const posts = await this.postModel.find({
-      filter: {
-        content: { $regex: new RegExp(key, "i") },
-      },
-      options: {
-        populate: {
-          path: "author",
-          match:{userName:{$regex: new RegExp(key, "i") }},
-          select:"_id firstName lastName picture userName"
+    let posts: { data: HPostDocument[]; pagination: any } = {
+      data: [],
+      pagination: {},
+    };
+
+    if (key && author) {
+      const data = await this.postModel.find({
+        filter: {
+          content: { $regex: new RegExp(key, "i") },
         },
-      },
-      page: pageNum,
-      limit: limitNum,
-    });
+        options: {
+          populate: {
+            path: "author",
+            select: "_id firstName lastName picture userName",
+          },
+        },
+        page: pageNum,
+        limit: limitNum,
+      });
+
+      const filteredPosts = data.data.filter(
+        (post: any) =>
+          post.author && new RegExp(author, "i").test(post.author.userName)
+      );
+
+      posts.data = filteredPosts;
+
+      posts.pagination = {
+        page: data.pagination.page,
+        limit: data.pagination.limit,
+        totalPages: Math.ceil(filteredPosts.length / data.pagination.limit),
+        total: filteredPosts.length,
+      };
+    }
+
+    if (key && !author) {
+      posts = await this.postModel.find({
+        filter: { content: { $regex: new RegExp(key, "i") } },
+        options: {
+          populate: {
+            path: "author",
+            select: "_id firstName lastName picture userName",
+          },
+        },
+        page: pageNum,
+        limit: limitNum,
+      });
+    }
+
+    if (author && !key) {
+      const data = await this.postModel.find({
+        filter: {},
+        options: {
+          populate: {
+            path: "author",
+            select: "_id firstName lastName picture userName",
+          },
+        },
+        page: pageNum,
+        limit: limitNum,
+      });
+
+      data.data.map((post: any) => {
+        if (new RegExp(author, "i").test(post.author.userName)) {
+          posts.data.push(post);
+        }
+      });
+
+      if (posts.data.length) {
+        posts.pagination = {
+          page: data.pagination.page,
+          limit: data.pagination.limit,
+          totalPages: data.pagination.totalPages,
+          total: posts.data.length,
+        };
+      }
+    }
+
+    if (!posts.data.length) {
+      throw new BadRequestException("Not Matched Posts With Search");
+    }
 
     return successResponse({
       res,
