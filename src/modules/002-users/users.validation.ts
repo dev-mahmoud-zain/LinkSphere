@@ -116,7 +116,7 @@ export const changeRole = {
 
 export const searchUser ={
         query : z.strictObject({
-        key: z.string(),
+        key: z.string().nonempty({message:"هتسيرش على حاجة فاضية ازاي يا نجم"}),
         page: z.coerce.number().positive().min(1).max(10).optional(),
         limit: z.coerce.number().positive().min(1).max(50).optional()
     }),

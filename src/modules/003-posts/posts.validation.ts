@@ -198,8 +198,8 @@ export const getPosts = {
 export const searchForPost = {
   query: z
     .strictObject({
-      key: z.string().optional(),
-      author: z.string().optional(),
+      key: z.string().nonempty().optional(),
+      author: z.string().nonempty().optional(),
       page: z.coerce.number().positive().min(1).max(10).optional(),
       limit: z.coerce.number().positive().min(1).max(50).optional(),
     })
