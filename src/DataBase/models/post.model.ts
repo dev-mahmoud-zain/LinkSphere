@@ -29,6 +29,8 @@ export interface IPost {
   only?: Types.ObjectId[];
   allowComments: allowCommentsEnum;
 
+  commentsCount:number;
+
   tags?: Types.ObjectId[];
   likes?: Types.ObjectId[];
   likesCount:number;
@@ -45,7 +47,7 @@ export interface IPost {
 
 export type HPostDocument = HydratedDocument<IPost>;
 
-const postSchima = new Schema<IPost>(
+const postSchema = new Schema<IPost>(
   {
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
 
@@ -84,6 +86,8 @@ const postSchima = new Schema<IPost>(
       default: allowCommentsEnum.allow,
     },
 
+    commentsCount:{type:Number,default :0},
+
     tags: { type: [Schema.Types.ObjectId], ref: "User" },
     likes: { type: [Schema.Types.ObjectId], ref: "User" },
     likesCount:{type:Number,default:0},
@@ -105,27 +109,27 @@ const postSchima = new Schema<IPost>(
   }
 );
 
-postSchima.virtual("author", {
+postSchema.virtual("author", {
   localField: "createdBy",
   foreignField: "_id",
   ref: "User",
   justOne: true,
 });
 
-postSchima.virtual("lastComment", {
+postSchema.virtual("lastComment", {
   localField: "_id",
   foreignField: "postId",
   ref: "Comment",
   justOne: true,
 });
 
-postSchima.virtual("comments", {
+postSchema.virtual("comments", {
   localField: "_id",
   foreignField: "postId",
   ref: "Comment",
 });
 
-postSchima.pre(
+postSchema.pre(
   "save",
 
   async function (
@@ -143,7 +147,7 @@ postSchima.pre(
   }
 );
 
-postSchima.post(
+postSchema.post(
   "save",
   async function (
     this: HPostDocument & {
@@ -179,7 +183,7 @@ postSchima.post(
   }
 );
 
-postSchima.pre(["updateOne", "findOne", "find"], function (next) {
+postSchema.pre(["updateOne", "findOne", "find"], function (next) {
   const query = this.getQuery();
   if (query.pranoId === false) {
     this.setQuery({ ...query });
@@ -189,4 +193,4 @@ postSchima.pre(["updateOne", "findOne", "find"], function (next) {
   next();
 });
 
-export const PostModel = models.Post || model("post", postSchima);
+export const PostModel = models.Post || model("post", postSchema);

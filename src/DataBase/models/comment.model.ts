@@ -18,7 +18,9 @@ export interface IComment {
 
   tags?: Types.ObjectId[];
   likes?: Types.ObjectId[];
-  likesCount:number;
+  likesCount: number;
+
+  repliesCount: number;
 
   freezedAt?: Date;
   freezedBy?: Types.ObjectId;
@@ -26,7 +28,7 @@ export interface IComment {
   restoredAt?: Date;
   restoredBy?: Types.ObjectId;
 
-  cretedAt: Date;
+  createdAt: Date;
   updatedAt?: Date;
 }
 
@@ -51,15 +53,14 @@ const commentSchema = new Schema<IComment>(
     },
 
     attachment: {
-      type: 
-        new Schema(
-          {
-            url: { type: String, required: true },
-            public_id: { type: String, required: true },
-          },
-          { _id: false }
-        ),
-      
+      type: new Schema(
+        {
+          url: { type: String, required: true },
+          public_id: { type: String, required: true },
+        },
+        { _id: false }
+      ),
+
       required: function () {
         return !this.content;
       },
@@ -67,7 +68,9 @@ const commentSchema = new Schema<IComment>(
 
     tags: { type: [Schema.Types.ObjectId], ref: "User" },
     likes: { type: [Schema.Types.ObjectId], ref: "User" },
-    likesCount:{type:Number,default:0},
+    likesCount: { type: Number, default: 0 },
+
+    repliesCount: { type: Number, default: 0 },
 
     freezedAt: Date,
     freezedBy: { type: Schema.Types.ObjectId, ref: "User" },
@@ -75,7 +78,7 @@ const commentSchema = new Schema<IComment>(
     restoredAt: Date,
     restoredBy: { type: Schema.Types.ObjectId, ref: "User" },
 
-    cretedAt: Date,
+    createdAt: Date,
     updatedAt: Date,
   },
   {
@@ -99,8 +102,6 @@ commentSchema.virtual("author", {
   ref: "User",
   justOne: true,
 });
-
-
 
 commentSchema.pre(["updateOne", "findOne", "find"], function (next) {
   const query = this.getQuery();

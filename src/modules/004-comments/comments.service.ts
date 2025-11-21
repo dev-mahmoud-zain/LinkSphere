@@ -84,14 +84,14 @@ export class Comments {
       throw new BadRequestException("User Cannot Mention Himself");
     }
 
-    let commentAttachment ;
+    let commentAttachment;
 
     if (attachment) {
-      const {public_id , secure_url} = (await uploadToCloudinary(
+      const { public_id, secure_url } = await uploadToCloudinary(
         attachment as Express.Multer.File,
         `LinkSphere/users/${post.createdBy}/posts/${post.assetsFolderId}/comments`
-      )) ;
-      commentAttachment = {public_id,url:secure_url}
+      );
+      commentAttachment = { public_id, url: secure_url };
     }
 
     const [comment] =
@@ -113,6 +113,10 @@ export class Comments {
       }
       throw new BadRequestException("Fail To Create Comment");
     }
+
+    post.commentsCount++;
+    post.save();
+
 
     return successResponse({
       res,
@@ -407,11 +411,11 @@ export class Comments {
     let replyAttachment;
 
     if (attachment) {
-      const {public_id , secure_url} = await uploadToCloudinary(
+      const { public_id, secure_url } = await uploadToCloudinary(
         attachment as Express.Multer.File,
         `LinkSphere/users/${post.createdBy}/posts/${post.assetsFolderId}/comments/${comment.id}/replies`
       );
-      replyAttachment={public_id,url:secure_url}
+      replyAttachment = { public_id, url: secure_url };
     }
 
     const [reply] =
@@ -434,6 +438,9 @@ export class Comments {
       }
       throw new BadRequestException("Fail To Create Comment");
     }
+
+    comment.repliesCount++;
+    comment.save();
 
     return successResponse({
       res,
@@ -470,12 +477,12 @@ export class Comments {
     let message: string = "";
 
     if (comment.likes?.includes(userId)) {
-      updateData = { $pull: { likes: userId },$inc:{likesCount:-1}  };
+      updateData = { $pull: { likes: userId }, $inc: { likesCount: -1 } };
       message = `${
         comment.flag === CommentFlagEnum.comment ? "Comment" : "Reply"
       } Unlinked Success`;
     } else {
-      updateData = { $addToSet: { likes: userId },$inc:{likesCount:1}  };
+      updateData = { $addToSet: { likes: userId }, $inc: { likesCount: 1 } };
       message = `${
         comment.flag === CommentFlagEnum.comment ? "Comment" : "Reply"
       } Liked Success`;
@@ -506,8 +513,8 @@ export class Comments {
       filter: {
         _id: commentId,
         postId,
-        createdBy:userId
-      }
+        createdBy: userId,
+      },
     });
 
     if (!comment) {
@@ -516,15 +523,14 @@ export class Comments {
       );
     }
 
-    const post = await this.postModel.findOne({
-        filter:{
-            _id:comment.postId
-        },
-        select:"_id createdBy assetsFolderId"
-    }) as IPost
+    const post = (await this.postModel.findOne({
+      filter: {
+        _id: comment.postId,
+      },
+      select: "_id createdBy assetsFolderId",
+    })) as IPost;
 
     if (comment.flag === CommentFlagEnum.comment) {
-
       const { data } = await this.commentModel.find({
         filter: {
           postId,
@@ -537,10 +543,10 @@ export class Comments {
       // Delete Replys Attachments
       if (data.length) {
         try {
-            deleteFolderFromCloudinary(`LinkSphere/users/${post?.createdBy}/posts/${post.assetsFolderId}/comments/${comment.id}`)
-        } catch (error) {
-
-        }
+          deleteFolderFromCloudinary(
+            `LinkSphere/users/${post?.createdBy}/posts/${post.assetsFolderId}/comments/${comment.id}`
+          );
+        } catch (error) {}
       }
 
       // Delete Replys
@@ -550,7 +556,17 @@ export class Comments {
         flag: CommentFlagEnum.reply,
       });
 
+      this.postModel.updateOne(
+        {
+          _id: postId,
+        },
+        {
+          $inc: { commentsCount: -1 },
+        }
+      );
     }
+
+
 
     return successResponse({
       res,
