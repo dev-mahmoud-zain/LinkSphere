@@ -54,6 +54,13 @@ router.get(
   postService.getPosts
 );
 
+router.get(
+  "/search",
+  authenticationMiddleware(),
+  validationMiddleware(validation.searchForPost),
+  postService.searchPosts
+);
+
 router.get("/me", authenticationMiddleware(), postService.getMyPosts);
 
 router.get(

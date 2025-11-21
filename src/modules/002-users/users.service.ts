@@ -1,12 +1,5 @@
 import { Response, Request } from "express";
 import {
-  deleteFile,
-  deleteFiles,
-  deleteFolderByPrefix,
-  uploadFile,
-  uploadFiles,
-} from "../../utils/multer/s3.config";
-import {
   ApplicationException,
   BadRequestException,
   ConflictException,
@@ -33,7 +26,7 @@ import {
   FriendRequestModel,
   ChatModel,
 } from "../../DataBase/models";
-import { ObjectId, Types } from "mongoose";
+import {  Types } from "mongoose";
 import {
   deleteFolderFromCloudinary,
   deleteImageFromCloudinary,
@@ -380,9 +373,7 @@ export class UserService {
     return successResponse({
       res,
       data: {
-        count: users.data.length,
-        page: users.pagination.page,
-        limit: users.pagination.limit,
+        pagination:users.pagination,
         users: users.data,
       },
     });

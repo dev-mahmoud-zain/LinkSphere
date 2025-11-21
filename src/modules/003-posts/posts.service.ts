@@ -415,7 +415,6 @@ export class PostService {
       limit,
     });
 
-
     return successResponse({
       res,
       data: {
@@ -423,6 +422,34 @@ export class PostService {
         posts: posts.data,
       },
     });
+  };
+
+  searchPosts = async (req: Request, res: Response): Promise<Response> => {
+    let { page, limit, key } = req.query as unknown as {
+      page: number;
+      limit: number;
+      key: string;
+    };
+
+    const pageNum = page ? Number(page) : 1;
+    const limitNum = limit ? Number(limit) : 10;
+
+    const posts = await this.postModel.find({
+      filter: {
+        content: { $regex: new RegExp(key, "i") },
+      },
+      page: pageNum,
+      limit: limitNum,
+    });
+
+    return successResponse({
+      res,
+      data: {
+        posts: posts.data,
+        pagination: posts.pagination,
+      },
+    });
+    
   };
 
   getFreezedPosts = async (req: Request, res: Response): Promise<Response> => {
@@ -658,10 +685,10 @@ export class PostService {
     let message: string = "";
 
     if (post.likes?.includes(userId)) {
-      updateData = { $pull: { likes: userId },$inc:{likesCount:-1} };
+      updateData = { $pull: { likes: userId }, $inc: { likesCount: -1 } };
       message = "Post Unlike Success";
     } else {
-      updateData = { $addToSet: { likes: userId },$inc:{likesCount:1}  };
+      updateData = { $addToSet: { likes: userId }, $inc: { likesCount: 1 } };
       message = "Post liked Success";
     }
 
@@ -669,8 +696,7 @@ export class PostService {
       filter: {
         _id: postId,
       },
-      updateData
-      
+      updateData,
     });
 
     if (!action) {
@@ -687,7 +713,6 @@ export class PostService {
       res,
       message,
     });
-    
   };
 
   freezePost = async (req: Request, res: Response): Promise<Response> => {
