@@ -57,7 +57,7 @@ export class SearchService {
 
 
 
-    
+
 
 
     return successResponse({
@@ -65,16 +65,12 @@ export class SearchService {
       data: {
         users: {
           data: users.data,
-          totalPages: users.pagination.totalPages,
-          total: users.pagination.total,
+          pagination:users.pagination
         },
         posts: {
           data: posts.data,
-          totalPages: posts.pagination.totalPages,
-          total: posts.pagination.total,
-        },
-        page: pageNum,
-        limit: limitNum,
+          pagination:posts.pagination
+        }
       },
     });
   };
