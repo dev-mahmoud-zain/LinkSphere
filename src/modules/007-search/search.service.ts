@@ -3,6 +3,8 @@ import { successResponse } from "../../utils/response/success.response";
 import { PostRepository, UserRepository } from "../../DataBase/repository";
 import { PostModel, UserModel } from "../../DataBase/models";
 import { postAvailability } from "../003-posts";
+import { SearchDto } from "./search.dto";
+import { search } from "./search.validation";
 
 export class SearchService {
   private postModel = new PostRepository(PostModel);
@@ -11,14 +13,8 @@ export class SearchService {
   constructor() {}
 
   search = async (req: Request, res: Response) => {
-    let { page, limit, key } = req.query as unknown as {
-      page: number;
-      limit: number;
-      key: string;
-    };
-
-    const pageNum = page ? Number(page) : 1;
-    const limitNum = limit ? Number(limit) : 10;
+    const { key, users_limit, users_page, posts_limit, posts_page } =
+      search.query.parse(req.query);
 
     const words = key.trim().split(/\s+/);
 
@@ -41,8 +37,8 @@ export class SearchService {
           picture: true,
           userName: true,
         },
-        page: pageNum,
-        limit: limitNum,
+        page: users_page,
+        limit: users_limit,
       }),
 
       this.postModel.find({
@@ -50,27 +46,22 @@ export class SearchService {
           $or: postAvailability(req),
           content: { $regex: new RegExp(key, "i") },
         },
-        page: pageNum,
-        limit: limitNum,
+        page: posts_page,
+        limit: posts_limit,
       }),
     ]);
-
-
-
-
-
 
     return successResponse({
       res,
       data: {
         users: {
           data: users.data,
-          pagination:users.pagination
+          pagination: users.pagination,
         },
         posts: {
           data: posts.data,
-          pagination:posts.pagination
-        }
+          pagination: posts.pagination,
+        },
       },
     });
   };
