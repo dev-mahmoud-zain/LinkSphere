@@ -196,10 +196,9 @@ export const getPosts = {
 };
 
 export const getLikedUsers = {
+  query: getPosts.query.extend({}),
   params: updatePostContent.params.extend({}),
 };
-
-
 
 export const searchForPost = {
   query: z

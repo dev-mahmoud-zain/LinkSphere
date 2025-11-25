@@ -428,41 +428,53 @@ export class PostService {
     });
   };
 
-
-  getLikedUsers= async (req: Request, res: Response): Promise<Response> => {
+  getLikedUsers = async (req: Request, res: Response): Promise<Response> => {
+    let { page, limit } = req.query as unknown as {
+      page: number;
+      limit: number;
+    };
 
     let postId = req.params.postId;
 
-
     const post = await this.postModel.findOne({
-      filter:{
-        _id:postId
+      filter: {
+        _id: postId,
       },
-      options:{
-        populate:[
+      options: {
+        populate: [
           {
-            path:"likedUsers",
-            select:"_id firstName lastName picture userName"
-          }
-        ]
-      }
-    })
+            path: "likedUsers",
+            select: "_id firstName lastName picture userName",
+            options: {
+              limit,
+              skip: (page - 1) * limit,
+            },
+          },
+        ],
+      },
+    });
 
-    if(!post){
-      throw new NotFoundException("Post Not Exits")
+    if (!post) {
+      throw new NotFoundException("Post Not Exits");
     }
 
-    if(post && !post.likedUsers?.length){
-      throw new BadRequestException("No Likes For This post")
+    if (post && !post.likedUsers?.length) {
+      throw new BadRequestException("No Likes For This post");
     }
 
-    
+    const pagination = {
+      page: new Number(page) || 1,
+      totalPages: Math.ceil((post.likes?.length as number) / (limit || 10)),
+      limit: new Number(limit) || 10,
+      total: post.likedUsers?.length || 0,
+    };
+
     return successResponse({
       res,
-      data:{
-        likedUsers : post.likedUsers,
-        count :post.likedUsers?.length
-      }
+      data: {
+        likedUsers: post.likedUsers,
+        pagination,
+      },
     });
   };
 
@@ -485,7 +497,7 @@ export class PostService {
     if (key && author) {
       const data = await this.postModel.find({
         filter: {
-          $or:postAvailability(req),
+          $or: postAvailability(req),
           content: { $regex: new RegExp(key, "i") },
         },
         options: {
