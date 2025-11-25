@@ -1,5 +1,5 @@
 import { HydratedDocument, model, models, Schema, Types } from "mongoose";
-import { HUserDocument, UserModel } from "./user.model";
+import { HUserDocument, IUser, UserModel } from "./user.model";
 import { UserRepository } from "../repository";
 import { emailEvent } from "../../utils/email/email.events";
 import { IImage } from "../../utils/cloudinary/cloudinary.interface";
@@ -43,6 +43,8 @@ export interface IPost {
 
   cretedAt: Date;
   updatedAt?: Date;
+
+  likedUsers?: IUser[];
 }
 
 export type HPostDocument = HydratedDocument<IPost>;
@@ -128,6 +130,15 @@ postSchema.virtual("comments", {
   foreignField: "postId",
   ref: "Comment",
 });
+
+
+postSchema.virtual("likedUsers", {
+  ref: "User",
+  localField: "likes",
+  foreignField: "_id",
+  justOne: false
+});
+
 
 postSchema.pre(
   "save",

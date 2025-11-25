@@ -195,6 +195,12 @@ export const getPosts = {
   }),
 };
 
+export const getPostLikers = {
+  params: updatePostContent.params.extend({}),
+};
+
+getPostLikers;
+
 export const searchForPost = {
   query: z
     .strictObject({

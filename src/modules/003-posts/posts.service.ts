@@ -428,6 +428,43 @@ export class PostService {
     });
   };
 
+
+  getPostLikers= async (req: Request, res: Response): Promise<Response> => {
+
+    let postId = req.params.postId;
+
+
+    const post = await this.postModel.findOne({
+      filter:{
+        _id:postId
+      },
+      options:{
+        populate:[
+          {
+            path:"likedUsers",
+            select:"_id firstName lastName picture userName"
+          }
+        ]
+      }
+    })
+
+    if(!post){
+      throw new NotFoundException("Post Not Exits")
+    }
+
+    if(post && !post.likedUsers?.length){
+      throw new BadRequestException("No Likes For This post")
+    }
+
+    
+    return successResponse({
+      res,
+      data:{
+        likedUsers : post.likedUsers
+      }
+    });
+  };
+
   searchPosts = async (req: Request, res: Response): Promise<Response> => {
     let { page, limit, key, author } = req.query as unknown as {
       page: number;
