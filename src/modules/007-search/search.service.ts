@@ -3,7 +3,6 @@ import { successResponse } from "../../utils/response/success.response";
 import { PostRepository, UserRepository } from "../../DataBase/repository";
 import { PostModel, UserModel } from "../../DataBase/models";
 import { postAvailability } from "../003-posts";
-import { SearchDto } from "./search.dto";
 import { search } from "./search.validation";
 
 export class SearchService {

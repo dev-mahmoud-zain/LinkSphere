@@ -220,6 +220,20 @@ userSchema.pre(
       this.OTPCode = this.confirmEmailOTP;
       this.confirmEmailOTP = await generateHash(this.confirmEmailOTP);
     }
+
+    if (
+      modifiedPaths.includes("firstName") ||
+      modifiedPaths.includes("lastName")
+    ) {
+      const first = this.firstName || "";
+      const last = this.lastName || "";
+
+      this.slug = `${first} ${last}`
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "");
+    }
   }
 );
 

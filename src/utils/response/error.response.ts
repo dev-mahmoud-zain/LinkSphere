@@ -77,6 +77,8 @@ export class ForbiddenException extends ApplicationException {
 
 export const globalErrorHandler = (error: iError, req: Request, res: Response, next: NextFunction) => {
 
+    console.log(error);
+
     res.status(error.statusCode || 500).json({
         error_message: error.message || "Something Went Wrong",
         name: error.name,
