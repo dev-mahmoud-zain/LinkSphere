@@ -64,7 +64,8 @@ export const logout = {
 
 export const signupWithGmail = {
     body: z.object({
-        idToken: z.string()
+        idToken: z.string(),
+        userName:generalFields.userName
     })
 }
 

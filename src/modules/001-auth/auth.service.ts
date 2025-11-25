@@ -131,13 +131,11 @@ class AuthenticationServices {
       }
     );
 
-
-        const credentials = await this.tokenService.createLoginCredentials(user);
-
+    const credentials = await this.tokenService.createLoginCredentials(user);
 
     return successResponse({
       res,
-      data:{credentials},
+      data: { credentials },
       info: "Email Confirmed Success",
     });
   };
@@ -256,53 +254,47 @@ class AuthenticationServices {
   };
 
   signupWithGmail = async (req: Request, res: Response): Promise<Response> => {
-    const { idToken }: ISignupWithGmail = req.body.validData;
-console.log("idToken:", idToken);
+    const { idToken, userName }: ISignupWithGmail = req.body.validData;
 
 
-    const payload = await this.verifyGmailAccount(idToken);
-    console.log(payload)
+    const {email} = await this.verifyGmailAccount(idToken);
 
-    // const user = await this.userModel.findOne({
-    //   filter: {
-    //     email,
-    //   },
-    // });
+    const user = await this.userModel.findOne({
+      filter: {
+        email,
+      },
+    });
 
-    // if (user) {
-    //   if (user.provider === ProviderEnum.system) {
-    //     return await this.loginWithGmail(req, res);
-    //   }
-    //   throw new ConflictException("Invalid Provider", {
-    //     userProvider: user.provider,
-    //   });
-    // }
+    if (user) {
+      if (user.provider === ProviderEnum.system) {
+        return await this.loginWithGmail(req, res);
+      }
+      throw new ConflictException("Invalid Provider", {
+        userProvider: user.provider,
+      });
+    }
 
+    const newUser = await this.userModel.createUser({
+      data: [
+        {
+         userName,
+          email: email as string,
+          confirmedAt: new Date(),
+          provider: ProviderEnum.google,
+        },
+      ],
+    });
 
+    if (!newUser) {
+      throw new BadRequestException("Fail To Signup");
+    }
 
-    // const newUser = await this.userModel.createUser({
-    //   data: [
-    //     {
-    //      firstName:given_name as string,
-    //      lastName:family_name as string,
-    //       email: email as string,
-    //       // picture: picture as string,
-    //       confirmedAt: new Date(),
-    //       provider: ProviderEnum.google,
-    //     },
-    //   ],
-    // });
-
-    // if (!newUser) {
-    //   throw new BadRequestException("Fail To Signup");
-    // }
-
-    // const credentials = await this.tokenService.createLoginCredentials(newUser);
+    const credentials = await this.tokenService.createLoginCredentials(newUser);
 
     return successResponse({
       res,
       info: "Signup Success",
-    //   data: { credentials },
+        data: { credentials },
     });
   };
 
