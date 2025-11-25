@@ -57,8 +57,8 @@ router.get(
 router.get(
   "/:postId/liked-users",
   authenticationMiddleware(),
-  validationMiddleware(validation.getPostLikers),
-  postService.getPostLikers
+  validationMiddleware(validation.getLikedUsers),
+  postService.getLikedUsers
 );
 
 

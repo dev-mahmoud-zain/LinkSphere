@@ -195,11 +195,11 @@ export const getPosts = {
   }),
 };
 
-export const getPostLikers = {
+export const getLikedUsers = {
   params: updatePostContent.params.extend({}),
 };
 
-getPostLikers;
+
 
 export const searchForPost = {
   query: z

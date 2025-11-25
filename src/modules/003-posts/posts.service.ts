@@ -429,7 +429,7 @@ export class PostService {
   };
 
 
-  getPostLikers= async (req: Request, res: Response): Promise<Response> => {
+  getLikedUsers= async (req: Request, res: Response): Promise<Response> => {
 
     let postId = req.params.postId;
 
@@ -460,7 +460,8 @@ export class PostService {
     return successResponse({
       res,
       data:{
-        likedUsers : post.likedUsers
+        likedUsers : post.likedUsers,
+        count :post.likedUsers?.length
       }
     });
   };
