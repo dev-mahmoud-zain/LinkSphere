@@ -266,7 +266,7 @@ class AuthenticationServices {
     });
 
     if (user) {
-      if (user.provider === ProviderEnum.system) {
+      if (user.provider === ProviderEnum.google) {
         return await this.loginWithGmail(req, res);
       }
       throw new ConflictException("Invalid Provider", {
