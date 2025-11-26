@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { successResponse } from "../../utils/response/success.response";
 import {
   CommentRepository,
+  FriendRequestRepository,
   PostRepository,
   UserRepository,
 } from "../../DataBase/repository";
@@ -18,7 +19,11 @@ import {
 import { I_CreatePostInputs } from "./dto/posts.dto";
 import { v4 as uuid } from "uuid";
 import { Types } from "mongoose";
-import { CommentFlagEnum, CommentModel } from "../../DataBase/models";
+import {
+  CommentFlagEnum,
+  CommentModel,
+  FriendRequestModel,
+} from "../../DataBase/models";
 import { connectedSockets, getIo } from "../005-gateway";
 import {
   deleteFolderFromCloudinary,
@@ -46,6 +51,7 @@ export class PostService {
   private postModel = new PostRepository(PostModel);
   private userModel = new UserRepository(UserModel);
   private commentModel = new CommentRepository(CommentModel);
+  private friendRequestModel = new FriendRequestRepository(FriendRequestModel);
 
   constructor() {}
 
@@ -434,6 +440,7 @@ export class PostService {
       limit: number;
     };
 
+    const userFriends = req.user?.friends;
     let postId = req.params.postId;
 
     const post = await this.postModel.findOne({
@@ -444,13 +451,14 @@ export class PostService {
         populate: [
           {
             path: "likedUsers",
-            select: "_id firstName lastName picture userName",
+            select: "_id firstName lastName userName picture",
             options: {
               limit,
               skip: (page - 1) * limit,
             },
           },
         ],
+        lean: { virtuals: true }
       },
     });
 
@@ -469,10 +477,43 @@ export class PostService {
       total: post.likedUsers?.length || 0,
     };
 
+    const users: any[] = [];
+
+    const processedUsers = await Promise.all(
+      post.likedUsers?.map(async (u) => {
+        if (req.user!._id.toString() === u._id.toString()) {
+          return { ...u, flag: "me" };
+        }
+
+        if (userFriends?.includes(u._id)) {
+          return { ...u, flag: "isFriend" };
+        }
+
+        const request = await this.friendRequestModel.findOne({
+          filter: {
+            $or: [
+              { sendBy: req.user?._id, sendTo: u._id },
+              { sendBy: u._id, sendTo: req.user?._id },
+            ],
+          },
+        });
+
+        if (!request) return { ...u, flag: "notFriend" };
+
+        if (request.sendBy.toString() === req.user!._id.toString()) {
+          return { ...u, flag: "requestSent" };
+        } else {
+          return { ...u, flag: "requestReceived" };
+        }
+      }) || []
+    );
+
+    users.push(...processedUsers);
+
     return successResponse({
       res,
       data: {
-        likedUsers: post.likedUsers,
+        likedUsers: users,
         pagination,
       },
     });

@@ -193,9 +193,19 @@ export class UserService {
       f._id.equals(reqUser)
     );
 
-    let friendRequestStatus: "sent" | "received" | null = null;
+    let flag:
+      | "isFriend"
+      | "received"
+      | "requestSent"
+      | "requestReceived"
+      | "notFriend" = "notFriend";
+
+    if (isFriend) {
+      flag = "isFriend";
+    }
 
     if (!isFriend) {
+      
       const friendRequest = await this.friendRequestModel.findOne({
         filter: {
           $or: [
@@ -207,17 +217,16 @@ export class UserService {
 
       if (friendRequest) {
         if (friendRequest.sendBy.equals(reqUser)) {
-          friendRequestStatus = "sent";
+          flag = "requestSent";
         } else {
-          friendRequestStatus = "received";
+          flag = "requestReceived";
         }
       }
     }
 
     const data = {
       ...user.toObject(),
-      isFriend,
-      friendRequest: friendRequestStatus,
+      flag,
       groups: groups.data,
     };
 
@@ -345,8 +354,7 @@ export class UserService {
   };
 
   searchUser = async (req: Request, res: Response): Promise<Response> => {
-
-     let { page, limit, key } = req.query as unknown as {
+    let { page, limit, key } = req.query as unknown as {
       page: number;
       limit: number;
       key: string;
@@ -366,7 +374,7 @@ export class UserService {
 
     const users = await this.userModel.find({
       filter: {
-       $and: nameQuery,
+        $and: nameQuery,
       },
       page: pageNum,
       limit: limitNum,
