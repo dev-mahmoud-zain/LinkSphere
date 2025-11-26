@@ -69,7 +69,7 @@ router.get(
   postService.searchPosts
 );
 
-router.get("/me", authenticationMiddleware(), postService.getMyPosts);
+router.get("/me", authenticationMiddleware(),validationMiddleware(validation.getPosts), postService.getMyPosts);
 
 router.get(
   "/user/:userId",

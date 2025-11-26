@@ -36,7 +36,6 @@ export const postAvailability = (
   req: Request,
   availability?: AvailabilityEnum
 ) => {
-
   if (availability) {
     switch (availability) {
       case AvailabilityEnum.public:
@@ -61,7 +60,7 @@ export const postAvailability = (
         ];
 
       default:
-        return []; 
+        return [];
     }
   }
 
@@ -78,7 +77,6 @@ export const postAvailability = (
     },
   ];
 };
-
 
 export class PostService {
   private postModel = new PostRepository(PostModel);
@@ -415,16 +413,15 @@ export class PostService {
   };
 
   getPosts = async (req: Request, res: Response): Promise<Response> => {
-    let { page, limit,availability } = req.query as unknown as {
+    let { page, limit, availability } = req.query as unknown as {
       page: number;
       limit: number;
-      availability:AvailabilityEnum
+      availability: AvailabilityEnum;
     };
-
 
     const posts = await this.postModel.find({
       filter: {
-        $or: postAvailability(req,availability),
+        $or: postAvailability(req, availability),
       },
       options: {
         populate: [
@@ -493,7 +490,7 @@ export class PostService {
             },
           },
         ],
-        lean: { virtuals: true }
+        lean: { virtuals: true },
       },
     });
 
@@ -685,9 +682,10 @@ export class PostService {
   };
 
   getMyPosts = async (req: Request, res: Response): Promise<Response> => {
-    let { page, limit } = req.query as unknown as {
+    let { page, limit, availability } = req.query as unknown as {
       page: number;
       limit: number;
+      availability: AvailabilityEnum;
     };
 
     const userId = req.user?._id;
@@ -695,6 +693,7 @@ export class PostService {
     const posts = await this.postModel.find({
       filter: {
         createdBy: userId,
+        ...(availability ? { availability } : {}),
       },
       options: {
         populate: [
@@ -725,9 +724,8 @@ export class PostService {
     return successResponse({
       res,
       data: {
-        ...(page && posts.pagination),
-        count: posts.data.length,
         posts: posts.data,
+        pagination: posts.pagination,
       },
     });
   };
