@@ -113,3 +113,9 @@ export const getPostComments = {
 export const getCommentReplies= {
     query: getPostComments.query.extend({})
 }
+
+
+export const getLikedUsers = {
+  query: getPostComments.query.extend({}),
+  params: getComment.params.extend({}),
+};

@@ -90,7 +90,6 @@ export default async function bootstrap(): Promise<void> {
 
   app.use("/chat", chatRouter);
 
-
   app.use("/search",searchRouter)
 
   app.use(globalErrorHandler);

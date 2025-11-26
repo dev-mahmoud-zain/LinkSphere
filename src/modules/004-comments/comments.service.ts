@@ -4,6 +4,7 @@ import {
   PostRepository,
   UserRepository,
   CommentRepository,
+  FriendRequestRepository,
 } from "../../DataBase/repository";
 import {
   UserModel,
@@ -13,6 +14,7 @@ import {
   HPostDocument,
   CommentFlagEnum,
   IPost,
+  FriendRequestModel,
 } from "../../DataBase/models";
 import {
   BadRequestException,
@@ -36,6 +38,9 @@ export class Comments {
   private userModel = new UserRepository(UserModel);
   private postModel = new PostRepository(PostModel);
   private commentModel = new CommentRepository(CommentModel);
+    private friendRequestModel = new FriendRequestRepository(FriendRequestModel);
+
+  
 
   constructor() {}
 
@@ -257,6 +262,92 @@ export class Comments {
       },
     });
   };
+
+
+   getLikedUsers = async (req: Request, res: Response): Promise<Response> => {
+      let { page, limit } = req.query as unknown as {
+        page: number;
+        limit: number;
+      };
+  
+      const userFriends = req.user?.friends;
+      let commentId = req.params.commentId;
+  
+      const comment = await this.commentModel.findOne({
+        filter: {
+          _id: commentId,
+        },
+        options: {
+          populate: [
+            {
+              path: "likedUsers",
+              select: "_id firstName lastName userName picture",
+              options: {
+                limit,
+                skip: (page - 1) * limit,
+              },
+            },
+          ],
+          lean: { virtuals: true }
+        },
+      });
+  
+      if (!comment) {
+        throw new NotFoundException("Post Not Exits");
+      }
+  
+      if (comment && !comment.likedUsers?.length) {
+        throw new BadRequestException("No Likes For This post");
+      }
+  
+      const pagination = {
+        page: new Number(page) || 1,
+        totalPages: Math.ceil((comment.likes?.length as number) / (limit || 10)),
+        limit: new Number(limit) || 10,
+        total: comment.likedUsers?.length || 0,
+      };
+  
+      const users: any[] = [];
+  
+      const processedUsers = await Promise.all(
+        comment.likedUsers?.map(async (u) => {
+          if (req.user!._id.toString() === u._id.toString()) {
+            return { ...u, flag: "me" };
+          }
+  
+          if (userFriends?.includes(u._id)) {
+            return { ...u, flag: "isFriend" };
+          }
+  
+          const request = await this.friendRequestModel.findOne({
+            filter: {
+              $or: [
+                { sendBy: req.user?._id, sendTo: u._id },
+                { sendBy: u._id, sendTo: req.user?._id },
+              ],
+            },
+          });
+  
+          if (!request) return { ...u, flag: "notFriend" };
+  
+          if (request.sendBy.toString() === req.user!._id.toString()) {
+            return { ...u, flag: "requestSent" };
+          } else {
+            return { ...u, flag: "requestReceived" };
+          }
+        }) || []
+      );
+  
+      users.push(...processedUsers);
+  
+      return successResponse({
+        res,
+        data: {
+          likedUsers: users,
+          pagination,
+        },
+      });
+    };
 
   updateComment = async (req: Request, res: Response): Promise<Response> => {
     const { tags, attachment, removeAttachment }: I_UpdateCommentInputs =

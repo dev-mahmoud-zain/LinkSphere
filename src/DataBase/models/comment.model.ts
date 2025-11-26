@@ -1,6 +1,7 @@
 import { HydratedDocument, model, models, Schema, Types } from "mongoose";
 import { IPost } from "./post.model";
 import { IImage } from "../../utils/cloudinary/cloudinary.interface";
+import { IUser } from "./user.model";
 
 export enum CommentFlagEnum {
   comment = "comment",
@@ -30,6 +31,9 @@ export interface IComment {
 
   createdAt: Date;
   updatedAt?: Date;
+
+    likedUsers?: IUser[];
+  
 }
 
 export type HCommentDocument = HydratedDocument<IComment>;
@@ -102,6 +106,15 @@ commentSchema.virtual("author", {
   ref: "User",
   justOne: true,
 });
+
+commentSchema.virtual("likedUsers", {
+  ref: "User",
+  localField: "likes",
+  foreignField: "_id",
+  justOne: false
+});
+
+
 
 commentSchema.pre(["updateOne", "findOne", "find"], function (next) {
   const query = this.getQuery();

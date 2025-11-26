@@ -2,64 +2,88 @@ import { Router } from "express";
 import { Comments } from "./comments.service";
 import { validationMiddleware } from "../../middlewares/validation.middleware";
 import * as validation from "./comments.validation";
-import { cloudFileUpload, fileValidation, StorageEnum } from "../../utils/multer/cloud.,multer";
+import {
+  cloudFileUpload,
+  fileValidation,
+  StorageEnum,
+} from "../../utils/multer/cloud.,multer";
 import { authenticationMiddleware } from "../../middlewares/authentication.middleware";
 
 const router = Router({ mergeParams: true });
 const comments = new Comments();
 
+router.post(
+  "/create-comment",
+  authenticationMiddleware(),
+  cloudFileUpload({
+    validation: fileValidation.image,
+    storageApproach: StorageEnum.memory,
+  }).single("image"),
+  validationMiddleware(validation.createComment),
+  comments.createComment
+);
 
-router.post("/create-comment",
-    authenticationMiddleware(),
-    cloudFileUpload({
-        validation: fileValidation.image,
-        storageApproach: StorageEnum.memory
-    }).single("image"),
-    validationMiddleware(validation.createComment),
-    comments.createComment);
+router.get(
+  "/comment/:commentId",
+  authenticationMiddleware(),
+  validationMiddleware(validation.getComment),
+  comments.getComment
+);
 
+router.get(
+  "/comments/",
+  authenticationMiddleware(),
+  validationMiddleware(validation.getPostComments),
+  comments.getPostComments
+);
 
-router.get("/comment/:commentId",
-    authenticationMiddleware(),
-    validationMiddleware(validation.getComment),
-    comments.getComment);
+router.get(
+  "/:commentId/replies",
+  authenticationMiddleware(),
+  validationMiddleware(validation.getCommentReplies),
+  comments.getGetCommentReplies
+);
 
-router.get("/comments/",
-    authenticationMiddleware(),
-    validationMiddleware(validation.getPostComments),
-    comments.getPostComments);
+router.patch(
+  "/update/:commentId",
+  authenticationMiddleware(),
+  cloudFileUpload({
+    validation: fileValidation.image,
+    storageApproach: StorageEnum.memory,
+  }).single("image"),
+  validationMiddleware(validation.updateComment),
+  comments.updateComment
+);
 
-router.get("/:commentId/replies",
-    authenticationMiddleware(),
-    validationMiddleware(validation.getCommentReplies),
-    comments.getGetCommentReplies);
+router.post(
+  "/:commentId/create-reply",
+  authenticationMiddleware(),
+  cloudFileUpload({
+    validation: fileValidation.image,
+    storageApproach: StorageEnum.memory,
+  }).single("image"),
+  validationMiddleware(validation.replyOnComment),
+  comments.replyOnComment
+);
 
-router.patch("/update/:commentId",
-    authenticationMiddleware(),
-    cloudFileUpload({
-        validation: fileValidation.image,
-        storageApproach: StorageEnum.memory
-    }).single("image"),
-    validationMiddleware(validation.updateComment),
-    comments.updateComment);
+router.post(
+  "/:commentId/like",
+  authenticationMiddleware(),
+  comments.likeComment
+);
 
-router.post("/:commentId/create-reply",
-    authenticationMiddleware(),
-    cloudFileUpload({
-        validation: fileValidation.image,
-        storageApproach: StorageEnum.memory
-    }).single("image"),
-    validationMiddleware(validation.replyOnComment),
-    comments.replyOnComment);
+router.delete(
+  "/delete/:commentId",
+  authenticationMiddleware(),
+  validationMiddleware(validation.deleteComment),
+  comments.deleteComment
+);
 
-router.post("/:commentId/like",
-    authenticationMiddleware(),
-    comments.likeComment);
-
-router.delete("/delete/:commentId",
-    authenticationMiddleware(),
-    validationMiddleware(validation.deleteComment),
-    comments.deleteComment);
-
+router.get(
+  "/:commentId/liked-users",
+  authenticationMiddleware(),
+  validationMiddleware(validation.getLikedUsers),
+  comments.getLikedUsers
+);
 
 export default router;
