@@ -32,7 +32,39 @@ import {
 } from "../../utils/cloudinary";
 import { IImage } from "../../utils/cloudinary/cloudinary.interface";
 
-export const postAvailability = (req: Request) => {
+export const postAvailability = (
+  req: Request,
+  availability?: AvailabilityEnum
+) => {
+
+  if (availability) {
+    switch (availability) {
+      case AvailabilityEnum.public:
+        return [{ availability: AvailabilityEnum.public }];
+
+      case AvailabilityEnum.onlyMe:
+        return [
+          {
+            availability: AvailabilityEnum.onlyMe,
+            createdBy: req.user?._id,
+          },
+        ];
+
+      case AvailabilityEnum.friends:
+        return [
+          {
+            availability: AvailabilityEnum.friends,
+            createdBy: {
+              $in: [...(req.user?.friends || []), req.user?._id],
+            },
+          },
+        ];
+
+      default:
+        return []; 
+    }
+  }
+
   return [
     { availability: AvailabilityEnum.public },
     { availability: AvailabilityEnum.onlyMe, createdBy: req.user?._id },
@@ -46,6 +78,7 @@ export const postAvailability = (req: Request) => {
     },
   ];
 };
+
 
 export class PostService {
   private postModel = new PostRepository(PostModel);
@@ -382,14 +415,16 @@ export class PostService {
   };
 
   getPosts = async (req: Request, res: Response): Promise<Response> => {
-    let { page, limit } = req.query as unknown as {
+    let { page, limit,availability } = req.query as unknown as {
       page: number;
       limit: number;
+      availability:AvailabilityEnum
     };
+
 
     const posts = await this.postModel.find({
       filter: {
-        $or: postAvailability(req),
+        $or: postAvailability(req,availability),
       },
       options: {
         populate: [
