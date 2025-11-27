@@ -22,10 +22,8 @@ emailEvent.on("confirmEmail", async (data: IEmailData) => {
         data.subject = "Confirm Your Email Address";
         await sendEmail(data);
     } catch (error) {
-        console.log("Fail To Send Email", error);
-        throw new ApplicationException("Something Went Wrong")
+        console.error("Fail To Send Email", error);
     }
-
 })
 
 emailEvent.on("confirmUpdatedEmail", async (data: IEmailData) => {
@@ -34,8 +32,7 @@ emailEvent.on("confirmUpdatedEmail", async (data: IEmailData) => {
         data.subject = "Confirm Your Updated Email Address";
         await sendEmail(data);
     } catch (error) {
-        console.log("Fail To Send Email", error);
-        throw new ApplicationException("Something Went Wrong")
+        console.error("Fail To Send Email", error);
     }
 
 })
@@ -46,8 +43,7 @@ emailEvent.on("enableTwoStepVerification", async (data: IEmailData) => {
         data.subject = "Enable Two-Step Verification – Action Required";
         await sendEmail(data);
     } catch (error) {
-        console.log("Fail To Send Email", error);
-        throw new ApplicationException("Something Went Wrong")
+        console.error("Fail To Send Email", error);
     }
 })
 
@@ -57,8 +53,7 @@ emailEvent.on("disableTwoStepVerification", async (data: IEmailData) => {
         data.subject = "Disable Two-Step Verification – Confirmation Needed";
         await sendEmail(data);
     } catch (error) {
-        console.log("Fail To Send Email", error);
-        throw new ApplicationException("Something Went Wrong")
+        console.error("Fail To Send Email", error);
     }
 })
 
@@ -68,8 +63,7 @@ emailEvent.on("loginTwoStepVerification", async (data: IEmailData) => {
         data.subject = "LinkSphere | Login Verification Code";
         await sendEmail(data);
     } catch (error) {
-        console.log("Fail To Send Email", error);
-        throw new ApplicationException("Something Went Wrong")
+        console.error("Fail To Send Email", error);
     }
 })
 
@@ -80,8 +74,7 @@ emailEvent.on("forgetPassword", async (data: IEmailData) => {
         data.subject = "Forget Your Password?";
         await sendEmail(data);
     } catch (error) {
-        console.log("Fail To Send Email", error);
-        throw new ApplicationException("Something Went Wrong")
+        console.error("Fail To Send Email", error);
     }
 
 })
@@ -93,8 +86,7 @@ emailEvent.on("changePassword", async (data: IEmailData) => {
         data.subject = "Forget Your Password?";
         await sendEmail(data);
     } catch (error) {
-        console.log("Fail To Send Email", error);
-        throw new ApplicationException("Something Went Wrong")
+        console.error("Fail To Send Email", error);
     }
 
 })
@@ -106,8 +98,7 @@ emailEvent.on("mentionedInPost", async (data: IMentionedInPostData) => {
         data.subject = `${data.mentionedBy} Mentioned You In Post`;
         await sendEmail(data);
     } catch (error) {
-        console.log("Fail To Send Email", error);
-        throw new ApplicationException("Something Went Wrong")
+        console.error("Fail To Send Email", error);
     }
 
 })

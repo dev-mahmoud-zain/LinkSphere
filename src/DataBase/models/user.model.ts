@@ -2,6 +2,7 @@ import mongoose, { Schema, models, model, HydratedDocument } from "mongoose";
 import { generateHash } from "../../utils/security/hash.security";
 import { emailEvent } from "../../utils/email/email.events";
 import { IImage } from "../../utils/cloudinary/cloudinary.interface";
+import { ApplicationException } from "../../utils/response/error.response";
 
 export enum GenderEnum {
   male = "male",
@@ -240,8 +241,13 @@ userSchema.pre(
 userSchema.post("save", async function (next) {
   const that = this as HUserDocument & { wasNew: boolean; OTPCode?: string };
   if (that.wasNew && that.OTPCode)
-    emailEvent.emit("confirmEmail", { to: this.email, OTPCode: that.OTPCode });
-});
+
+    try {
+          emailEvent.emit("confirmEmail", { to: this.email, OTPCode: that.OTPCode });
+    } catch (error) {
+          throw new ApplicationException("Fail to send email");
+    }
+  });
 
 userSchema.pre(["updateOne", "findOne", "find"], function (next) {
   const query = this.getQuery();
