@@ -2,7 +2,6 @@ import EventEmitter from 'node:events';
 import { sendEmail } from './sendEmail.js';
 import Mail from 'nodemailer/lib/mailer/index.js';
 import { confirmEmailTemplate, disableTwoStepVerificationTemplate, enableTwoStepVerificationTemplate, forgetPasswordTemplate, loginTwoStepVerificationTemplate, mentionNotificationTemplate, passwordChangedTemplate, updateEmailTemplate } from './email.template.js';
-import { ApplicationException } from '../response/error.response.js';
 
 export const emailEvent = new EventEmitter();
 
@@ -34,7 +33,6 @@ emailEvent.on("confirmUpdatedEmail", async (data: IEmailData) => {
     } catch (error) {
         console.error("Fail To Send Email", error);
     }
-
 })
 
 emailEvent.on("enableTwoStepVerification", async (data: IEmailData) => {

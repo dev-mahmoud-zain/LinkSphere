@@ -24,7 +24,6 @@ import {
   CommentModel,
   FriendRequestModel,
 } from "../../DataBase/models";
-import { connectedSockets, getIo } from "../005-gateway";
 import {
   deleteFolderFromCloudinary,
   deleteMultiFromCloudinary,
@@ -906,11 +905,11 @@ export class PostService {
       throw new BadRequestException("Fail To Make This Action");
     }
 
-    if (message === "Post liked Success") {
-      getIo()
-        .to(connectedSockets.get(post.createdBy.toString()) as string[])
-        .emit("likePost", { postId, userId });
-    }
+    // if (message === "Post liked Success") {
+    //   getIo()
+    //     .to(connectedSockets.get(post.createdBy.toString()) as string[])
+    //     .emit("likePost", { postId, userId });
+    // }
 
     return successResponse({
       res,

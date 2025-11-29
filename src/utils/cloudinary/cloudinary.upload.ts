@@ -23,7 +23,6 @@ export async function uploadToCloudinary(
     upload.end(file.buffer);
   });
 }
-
 export async function uploadMultiImagesToCloudinary(
   files: Express.Multer.File[],
   path: string

@@ -33,7 +33,7 @@ const messageSchema = new Schema<IMessage>({
 
 
 const chatSchema = new Schema<IChat>({
-    participants: [{ type: Schema.Types.ObjectId, ref: "User", required: true }],
+    participants: [{ type: Schema.Types.ObjectId, ref: "User", required: true  }],
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
 
     groupName: { type: String },

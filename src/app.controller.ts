@@ -12,12 +12,14 @@ config({ path: resolve("./config/.env.development") });
 
 import {
   authRouter,
-  chatRouter,
   postsRouter,
   usersRouter,
   searchRouter,
+  initializeIo,
 } from "./modules/";
-import { globalErrorHandler } from "./utils/response/error.response";
+import {
+  globalErrorHandler,
+} from "./utils/response/error.response";
 import connectToDataBase from "./DataBase/DB_Connection";
 
 // GQL
@@ -27,8 +29,7 @@ import { authenticationMiddleware } from "./middlewares/authentication.middlewar
 
 import morgan from "morgan";
 
-import { Server, Socket } from "socket.io";
-import { successResponse } from "./utils/response/success.response";
+
 
 // App Start Point
 export default async function bootstrap(): Promise<void> {
@@ -46,7 +47,7 @@ export default async function bootstrap(): Promise<void> {
 
   app.use(
     cors({
-      origin: "http://localhost:4200",
+      origin: ["http://localhost:4200", "http://127.0.0.1:5500"],
       credentials: true,
       allowedHeaders: ["Content-Type", "Authorization"],
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
@@ -90,9 +91,8 @@ export default async function bootstrap(): Promise<void> {
   // Users Router
   app.use("/posts", postsRouter);
 
-  app.use("/chat", chatRouter);
-
   app.use("/search", searchRouter);
+
 
   app.use(globalErrorHandler);
 
@@ -106,46 +106,21 @@ export default async function bootstrap(): Promise<void> {
     });
   });
 
-  const httpServer = app.listen(port, () => {
+   const httpServer = app.listen(port, () => {
     console.log("===================================");
     console.log(`LinkSphere App Is Ruining Success on Port :: ${port}`);
     console.log("===================================");
   });
 
-  const io = new Server(httpServer, {
-    cors: {
-      origin: ["http://localhost:4200", "http://127.0.0.1:5500"],
-    },
-  });
+ // ============================== SOCKET IO ==============================
 
 
-  const connectedSockets :string[] = [];
 
-  io.on("connection", (socket: Socket) => {
+  initializeIo(httpServer);
 
-    connectedSockets.push(socket.id);
 
-    socket.on("message", (message, callBack) => {
-      try {
-        console.log({ message });
-        callBack("Done");
-      } catch (error) {
-        console.log("Error");
-      }
-    });
 
-    // socket.broadcast.emit("commented-on-post", 
-    //   {
-    //     messeage:"Adham Also Cemented On Ali's Post",
-    //     commentId:"#14541asdasd"
-    //   }
-    // );
 
-    socket.on("disconnect", () => {
-      console.log(socket.id + " disconnect");
-    });
 
-    console.log(connectedSockets)
 
-  });
 }

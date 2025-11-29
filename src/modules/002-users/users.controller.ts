@@ -12,10 +12,13 @@ import {
 import { validationMiddleware } from "../../middlewares/validation.middleware";
 import * as usersValidation from "./users.validation";
 import { endPoints } from "./users.authorization";
-import { router as chatRouter } from "../006-chat";
+import   {ChatRouter}   from "../008-chat";
 
 const router = Router();
-router.use("/:userId/chat", chatRouter);
+
+
+router.use("/:userId/chat", ChatRouter);
+
 // ============================ Profile Management =============================
 
 router.patch(
