@@ -1,5 +1,5 @@
 {
-  "name": "socket.io-test",
+  "name": "fe",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "jwt-decode": "^3.1.2",
     "socket.io": "^4.8.1"
   }
 }
