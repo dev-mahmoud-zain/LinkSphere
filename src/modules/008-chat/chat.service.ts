@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ISendMessage } from "./chat.dto";
+import { IMessageSeen, ISendMessage } from "./chat.dto";
 import { ChatRepository, UserRepository } from "../../DataBase/repository";
 import { ChatModel, UserModel } from "../../DataBase/models";
 import { Types } from "mongoose";
@@ -40,19 +40,18 @@ export class ChatService {
         ],
       },
       page,
-      size:limit
+      size: limit,
     });
 
     if (!chat) {
       throw new NotFoundException("No Matched Chat Between Participants");
     }
 
-    console.log(chat)
-
     return successResponse({
       res,
       data: {
-        chat,
+        chat: chat.chat,
+        p: chat.pagination,
       },
     });
   };
@@ -134,11 +133,68 @@ export class ChatService {
         content: message.content,
         from: socket.credentials?.user,
       });
-
-
-
     } catch (error) {
-      console.error("send-message error",error);
+      console.error("send-message error", error);
+
+      socket.emit("custom_error", error);
+    }
+  };
+
+  messageSeen = async ({
+    data,
+    socket,
+    io,
+    connectedSockets,
+  }: IMessageSeen) => {
+    try {
+      if (!data.chatId || !data.messageId) {
+        throw new BadRequestException("chatId and messageId are required");
+      }
+
+      const userId = socket.credentials?.decoded._id;
+
+      const { chat } = await this.chatRepository.findOneChat({
+        filter: {
+          _id: data.chatId,
+          participants: {
+            $in: [userId],
+          },
+        },
+      });
+
+      if (!chat) {
+        throw new BadRequestException("Fail To Find Matched Chat");
+      }
+
+      const message = chat.messages[chat.messages.length - 1];
+
+      if (message?._id!.toString() !== data.messageId.toString()) {
+        throw new BadRequestException("Fail To Find Matched Message In Chat");
+      }
+
+      if(message.seen === true){
+         throw new BadRequestException("Message Already Seen Before");
+      }
+
+      
+      message.seen = true;
+      message.seenAt = new Date();
+
+      const senderSockets = connectedSockets.get(userId.toString());
+      if (!senderSockets || senderSockets.size === 0) {
+        return;
+      }
+
+      io.to([...senderSockets]).emit("message-seen", {
+        chatId:data.chatId,
+        messageId:data.messageId,
+        seen: true,
+        seenAt: message.seenAt,
+      });
+
+      chat.save();
+    } catch (error) {
+      console.error("message-seen error", error);
 
       socket.emit("custom_error", error);
     }

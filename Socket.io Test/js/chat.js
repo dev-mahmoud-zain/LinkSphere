@@ -33,6 +33,11 @@ clintIo.emit("message","Hello",(callBack)=>{
 console.log(callBack)
 })
 
+clintIo.on('message-seen', (data) => {
+
+   console.log("message seen done" , data)
+})
+
 
 // // clintIo.emit("sendMessage", { content: "FE need  profile", sendTo: "68c1bfd8f91ee1f635b7f799" })
 // clintIo.on("profile", (data) => {
@@ -68,7 +73,7 @@ function sendMessage(sendTo, type) {
     console.log({ sendTo, type });
 
     if (type == "ovo") {
-        
+
         const data = {
             content: $("#messageBody").val(),
             sendTo,
@@ -199,7 +204,9 @@ function displayChatUser(userId) {
         url: `${baseURL}/users/${userId}/chat?page=1&limit=5`,
         headers,
     }).then(function (response) {
-        const { chat } = response.data?.data
+        const chat = response.data?.data.chat
+
+        
 
         if (chat) {
 
@@ -212,6 +219,18 @@ function displayChatUser(userId) {
             }
 
             showData(userId, chat)
+
+            
+        // ============= Seen =========
+
+
+        const messageId = chat.messages[chat.messages.length -1]._id;
+
+        clintIo.emit("message-seen",{
+            chatId:chat,
+            messageId
+        })
+
         } else {
             showData(userId, 0)
         }

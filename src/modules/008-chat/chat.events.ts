@@ -20,7 +20,19 @@ export class ChatEvents {
     });
   };
 
+  messageSeen = (socket: IAuthSocket,io:Server,connectedSockets: Map<string, Set<string>>) => {
 
+    return socket.on("message-seen", (data) => {
+
+      return this.chatService.messageSeen({
+        socket,
+        data,
+        io,
+        connectedSockets
+      });
+      
+    });
+  };
 
 
 }

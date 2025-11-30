@@ -7,7 +7,13 @@ export class ChatGateWay {
 
   constructor() {}
 
-  register = (socket: IAuthSocket, io: Server,connectedSockets: Map<string, Set<string>>) => {
-    this.chatEvents.sendMessage(socket, io,connectedSockets);
+  register = (
+    socket: IAuthSocket,
+    io: Server,
+    connectedSockets: Map<string, Set<string>>
+  ) => {
+    this.chatEvents.sendMessage(socket, io, connectedSockets);
+
+    this.chatEvents.messageSeen(socket, io, connectedSockets);
   };
 }

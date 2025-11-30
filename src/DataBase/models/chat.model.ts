@@ -2,6 +2,7 @@ import { model } from "mongoose";
 import { HydratedDocument, models, Schema, Types } from "mongoose";
 
 export interface IMessage {
+    _id?:Types.ObjectId,
   content: string;
 
   seen?: boolean;
