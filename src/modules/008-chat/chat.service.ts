@@ -176,7 +176,7 @@ export class ChatService {
          throw new BadRequestException("Message Already Seen Before");
       }
 
-      
+
       message.seen = true;
       message.seenAt = new Date();
 
@@ -192,6 +192,7 @@ export class ChatService {
         seenAt: message.seenAt,
       });
 
+      
       chat.save();
     } catch (error) {
       console.error("message-seen error", error);

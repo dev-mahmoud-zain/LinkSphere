@@ -24,8 +24,12 @@ clintIo.on("like-post", data => {
     console.log({ likeData: data });
 });
 
-clintIo.on("offline-user", data => {
-    console.log("offline-user",{ data });
+clintIo.on("online-friend", data => {
+    console.log("online-friend",{ data });
+});
+
+clintIo.on("offline-friend", data => {
+    console.log("offline-friend",{ data });
 });
 
 
@@ -34,9 +38,11 @@ console.log(callBack)
 })
 
 clintIo.on('message-seen', (data) => {
-
    console.log("message seen done" , data)
 })
+
+
+
 
 
 // // clintIo.emit("sendMessage", { content: "FE need  profile", sendTo: "68c1bfd8f91ee1f635b7f799" })
@@ -230,6 +236,7 @@ function displayChatUser(userId) {
             chatId:chat,
             messageId
         })
+
 
         } else {
             showData(userId, 0)

@@ -115,12 +115,7 @@ export default async function bootstrap(): Promise<void> {
  // ============================== SOCKET IO ==============================
 
 
-
   initializeIo(httpServer);
-
-
-
-
 
 
 }
