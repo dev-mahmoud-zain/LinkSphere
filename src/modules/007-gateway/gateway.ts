@@ -8,17 +8,19 @@ import { IAuthSocket } from "./interface";
 import { ChatGateWay } from "../008-chat";
 import { BadRequestException } from "../../utils/response/error.response";
 import { connectedSockets } from "./connectedSockets";
-import { Types } from "mongoose";
+
+
 
 const chatGateWay = new ChatGateWay();
 const token = new TokenService();
+
 
 let io: undefined | Server = undefined;
 
 export const initializeIo = (httpServer: HttpServer) => {
   io = new Server(httpServer, {
     cors: {
-      origin: ["http://localhost:4200", "http://127.0.0.1:5500"],
+      origin: ["http://localhost:4200", "http://127.0.0.1:5500",],
     },
   });
 
@@ -46,69 +48,45 @@ export const initializeIo = (httpServer: HttpServer) => {
   // ===========================
   // Handle Disconnect
   // ===========================
-  
-function disconnection(socket: IAuthSocket) {
-  socket.on("disconnect", () => {
-    const userId = socket.credentials?.decoded._id as string;
+  function disconnection(socket: IAuthSocket) {
+    socket.on("disconnect", () => {
+      const userId = socket.credentials?.decoded._id as string;
 
-    const userSockets = connectedSockets.get(userId);
-    if (!userSockets) return;
+      const sockets = connectedSockets.get(userId);
+      if (!sockets) return;
 
-    userSockets.delete(socket.id);
+      // شيل socket اللي اتقفل بس
+      sockets.delete(socket.id);
 
-    // ندي مهلة قبل ما نعلن إن اليوزر offline
-    setTimeout(() => {
-      const stillSockets = connectedSockets.get(userId);
-
-      // لو رجع بسوكيت جديد → يفضل Online ومش بنبعت offline
-      if (stillSockets && stillSockets.size > 0) {
-        return;
+      // لو بقى 0 → يعتبر فعلاً user offline
+      if (sockets.size === 0) {
+        connectedSockets.delete(userId);
+        getIo().emit("offline-user", userId);
       }
 
-      // فعلاً Offline
-      connectedSockets.delete(userId);
-
-      getIo().emit("offline-friend", userId);
-
-    }, 500); // المهلة التي تمنع offline وقت الريفريش
-  });
-}
-
-
+      console.log("updated connectedSockets:", connectedSockets);
+    });
+  }
 
   // ===========================
   // On Connection
   // ===========================
   getIo().on("connection", (socket: IAuthSocket) => {
     const userId = socket.credentials?.decoded._id as string;
-
+    
     // لو أول مرة user يدخل → اعمله Set جديدة
     if (!connectedSockets.has(userId)) {
       connectedSockets.set(userId, new Set());
     }
 
-    const entries: [string, Set<string>][] = Array.from(
-      connectedSockets.entries()
-    );
+    // ضيف socket الحالي للتابات المفتوحة
+    connectedSockets.get(userId)!.add(socket.id);
 
-    const userFriends: string[] =
-      socket.credentials?.user.friends?.map((f: any) => f.toString()) || [];
 
-    // هات بس اللي أونلاين
-    const onlineFriends = entries.filter(([userId]) =>
-      userFriends.includes(userId)
-    );
 
-    // جمع الـ sockets كلها في Array
-    const onlineFriendSockets: string[] = onlineFriends.flatMap(
-      ([userId, sockets]) => Array.from(sockets)
-    );
-
-    // ابعت الرسالة
-    getIo().to(onlineFriendSockets).emit("online-friend", { userId: socket.credentials?.user._id});
 
     // Register في الـ Chat Gateway
-    chatGateWay.register(socket, getIo(), connectedSockets);
+    chatGateWay.register(socket, getIo(),connectedSockets);
 
     disconnection(socket);
   });

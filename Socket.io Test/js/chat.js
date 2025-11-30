@@ -24,6 +24,7 @@ clintIo.on("like-post", data => {
     console.log({ likeData: data });
 });
 
+
 clintIo.on("online-friend", data => {
     console.log("online-friend",{ data });
 });
@@ -31,6 +32,7 @@ clintIo.on("online-friend", data => {
 clintIo.on("offline-friend", data => {
     console.log("offline-friend",{ data });
 });
+
 
 
 clintIo.emit("message","Hello",(callBack)=>{
@@ -100,7 +102,10 @@ function sendMessage(sendTo, type) {
 // //sendCompleted
 clintIo.on('success-message', (data) => {
 
-    const { content } = data
+    const { content,messageId } = data
+
+    console.log({messageId})
+
 
     const div = document.createElement('div');
 
@@ -119,8 +124,12 @@ clintIo.on('success-message', (data) => {
 // // //receiveMessage
 clintIo.on("new-message", (data) => {
 
-    console.log({ RM: data });
+    console.log({"newMessage": data });
+
+    console.log("New Meessage")
+
     const { content, from, groupId } = data
+
     console.log({ from });
 
     let imagePath = avatar;

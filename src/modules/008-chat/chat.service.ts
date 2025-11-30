@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { IMessageSeen, ISendMessage } from "./chat.dto";
 import { ChatRepository, UserRepository } from "../../DataBase/repository";
-import { ChatModel, UserModel } from "../../DataBase/models";
+import { ChatModel, HChatDocument, UserModel } from "../../DataBase/models";
 import { Types } from "mongoose";
 import {
   BadRequestException,
@@ -81,7 +81,8 @@ export class ChatService {
         throw new BadRequestException("Fail To Find Recipient Friend");
       }
 
-      let chat;
+      let chat: HChatDocument | null;
+
       chat = await this.chatRepository.findOneAndUpdate({
         filter: {
           participants: {
@@ -100,21 +101,38 @@ export class ChatService {
       });
 
       if (!chat) {
-        chat = await this.chatRepository.create({
-          data: [
-            {
-              participants: [sendTo, createdBy],
-              messages: [
-                {
-                  content: message.content,
-                  createdBy,
-                },
-              ],
-              createdBy,
-            },
-          ],
-        });
+        const [newChat] =
+          (await this.chatRepository.create({
+            data: [
+              {
+                participants: [sendTo, createdBy],
+                messages: [
+                  {
+                    content: message.content,
+                    createdBy,
+                  },
+                ],
+                createdBy,
+              },
+            ],
+          })) || [];
+
+        if (newChat) {
+          chat = newChat;
+        }
       }
+
+      const lastChat = await this.chatRepository.findOneChat({
+        filter: {
+          participants: {
+            $all: [sendTo, createdBy],
+          },
+          groupName: { $exists: false },
+        },
+      });
+      const messageId = lastChat.chat?.messages[lastChat.chat?.messages.length-1]?._id;
+
+      
 
       const senderSockets = connectedSockets.get(createdBy.toString());
       const receiverSockets = connectedSockets.get(sendTo.toString());
@@ -122,9 +140,12 @@ export class ChatService {
       if (!senderSockets || senderSockets.size === 0) {
         return;
       }
+
       io.to([...senderSockets]).emit("success-message", {
         content: message.content,
+        messageId
       });
+
       if (!receiverSockets || receiverSockets.size === 0) {
         return;
       }
@@ -132,6 +153,7 @@ export class ChatService {
       io.to([...receiverSockets]).emit("new-message", {
         content: message.content,
         from: socket.credentials?.user,
+        messageId
       });
     } catch (error) {
       console.error("send-message error", error);
@@ -172,10 +194,9 @@ export class ChatService {
         throw new BadRequestException("Fail To Find Matched Message In Chat");
       }
 
-      if(message.seen === true){
-         throw new BadRequestException("Message Already Seen Before");
+      if (message.seen === true) {
+        throw new BadRequestException("Message Already Seen Before");
       }
-
 
       message.seen = true;
       message.seenAt = new Date();
@@ -186,13 +207,12 @@ export class ChatService {
       }
 
       io.to([...senderSockets]).emit("message-seen", {
-        chatId:data.chatId,
-        messageId:data.messageId,
+        chatId: data.chatId,
+        messageId: data.messageId,
         seen: true,
         seenAt: message.seenAt,
       });
 
-      
       chat.save();
     } catch (error) {
       console.error("message-seen error", error);
