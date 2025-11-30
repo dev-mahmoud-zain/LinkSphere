@@ -134,8 +134,11 @@ export class ChatService {
         content: message.content,
         from: socket.credentials?.user,
       });
+
+
+
     } catch (error) {
-      console.log(error);
+      console.error("send-message error",error);
 
       socket.emit("custom_error", error);
     }

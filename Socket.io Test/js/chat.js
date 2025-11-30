@@ -67,8 +67,8 @@ let friendImage = './avatar/Avatar-No-Background.png'
 function sendMessage(sendTo, type) {
     console.log({ sendTo, type });
 
-
     if (type == "ovo") {
+        
         const data = {
             content: $("#messageBody").val(),
             sendTo,
