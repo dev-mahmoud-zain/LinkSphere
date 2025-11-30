@@ -1,5 +1,5 @@
 import { graphQLValidationMiddleware } from "../../middlewares/validation.middleware";
-import { PostService } from "./posts.srevice";
+import { PostService } from "./posts.service";
 import { GQLValidation } from "./posts.validation";
 
 

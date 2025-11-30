@@ -20,13 +20,14 @@ clintIo.on("custom_error", (err) => {
     console.log("custom_error:", err);
 });
 
-clintIo.on("likePost", data => {
+clintIo.on("like-post", data => {
     console.log({ likeData: data });
 });
 
 clintIo.on("offline-user", data => {
     console.log("offline-user",{ data });
 });
+
 
 clintIo.emit("message","Hello",(callBack)=>{
 console.log(callBack)
@@ -53,7 +54,6 @@ console.log(callBack)
 // })
 
 
-
 //images links
 let avatar = './avatar/Avatar-No-Background.png'
 let meImage = './avatar/Avatar-No-Background.png'
@@ -73,26 +73,23 @@ function sendMessage(sendTo, type) {
             content: $("#messageBody").val(),
             sendTo,
         }
-        console.log({ data });
 
         clintIo.emit('send-message', data)
+
     } else if (type == "group") {
         const data = {
             content: $("#messageBody").val(),
             groupId: sendTo,
         }
         clintIo.emit('sendGroupMessage', data)
-
     }
 
 }
 
 // //sendCompleted
 clintIo.on('success-message', (data) => {
+
     const { content } = data
-
-    console.log("content");
-
 
     const div = document.createElement('div');
 
@@ -110,14 +107,16 @@ clintIo.on('success-message', (data) => {
 
 // // //receiveMessage
 clintIo.on("new-message", (data) => {
+
     console.log({ RM: data });
     const { content, from, groupId } = data
     console.log({ from });
 
     let imagePath = avatar;
-    if (from?.profilePicture) {
-        imagePath = `${baseURL}/upload/${from.profilePicture}`
+    if (from?.picture) {
+        imagePath = from.picture.url
     }
+
     const onclickAttr = document.getElementById("sendMessage").getAttribute("onclick")
     const [base, currentOpenedChat] = onclickAttr?.match(/sendMessage\('([^']+)'/) || [];
     console.log({ currentOpenedChat });
@@ -194,11 +193,11 @@ function showData(sendTo, chat) {
 
 // //get chat conversation between 2 users and pass it to ShowData fun
 function displayChatUser(userId) {
-    console.log({ userId });
+
     axios({
         method: 'get',
-        url: `${baseURL}/users/${userId}/chat`,
-        headers
+        url: `${baseURL}/users/${userId}/chat?page=1&limit=5`,
+        headers,
     }).then(function (response) {
         const { chat } = response.data?.data
 

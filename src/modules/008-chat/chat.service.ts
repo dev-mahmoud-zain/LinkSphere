@@ -18,7 +18,10 @@ export class ChatService {
   // ===================  Get User Chat ===================
   getChat = async (req: Request, res: Response) => {
     const { userId } = req.params;
-
+    const { page, limit } = req.query as unknown as {
+      page: number;
+      limit: number;
+    };
     const reqUserId = req.user?._id;
 
     const chat = await this.chatRepository.findOneChat({
@@ -36,11 +39,15 @@ export class ChatService {
           },
         ],
       },
+      page,
+      size:limit
     });
 
     if (!chat) {
       throw new NotFoundException("No Matched Chat Between Participants");
     }
+
+    console.log(chat)
 
     return successResponse({
       res,
@@ -125,10 +132,8 @@ export class ChatService {
 
       io.to([...receiverSockets]).emit("new-message", {
         content: message.content,
-        from:socket.credentials?.user
+        from: socket.credentials?.user,
       });
-
-      
     } catch (error) {
       console.log(error);
 
