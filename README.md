@@ -18,10 +18,12 @@ It enables users to register, authenticate, create posts, comment, and interact 
 * 📡 **Real-time Gateway** – Socket.io integration for live features.
 * 💌 **Email Notifications** – Nodemailer for account-related emails.
 * ☁️ **Cloud Storage** – AWS S3 integration for media files.
+* 💬 **Chat Module** – Real-time messaging (1-on-1 & Group) with socket.io.
+* 🔍 **Search Module** – Advanced search capabilities for users and content.
+
 
 ### 🚧 Work in Progress
 
-* 💬 **Chat Module** – Currently under development to enable real-time messaging.
 * 👥 **Groups & Pages** – Planned future features.
 * 🔔 **Notifications** – Planned for post & comment interactions.
 * ⚙️ **User Settings & Privacy Controls** – Upcoming enhancements.
@@ -75,8 +77,10 @@ It enables users to register, authenticate, create posts, comment, and interact 
 │   │   ├── 002-users/    # User management
 │   │   ├── 003-posts/    # Posts creation & management
 │   │   ├── 004-comments/ # Comments & replies system
-│   │   ├── 005-gateway/  # Gateway (WebSocket / real-time features)
-│   │   └── 006-chat/     # Chat & messaging module
+│   │   ├── 006-search/   # Search functionality
+│   │   ├── 007-gateway/  # Gateway (WebSocket / real-time features)
+│   │   └── 008-chat/     # Chat & messaging module
+
 │   ├── types/            # TypeScript type definitions
 │   ├── utils/            # Utility functions & helpers
 │   ├── app.controller.ts # Root controller / entry endpoints
@@ -228,6 +232,17 @@ BASE_URL
 - `POST /posts/{postId}/{commentId}/like` → Like or unlike a comment or reply  
 - `DELETE /posts/{postId}/{commentId}/freezee` → Temporarily hide a comment or reply  
 - `PATCH /posts/{postId}/{commentId}/unfreezee` → Re-enable a previously frozen comment or reply  
+
+---
+
+## 💬 Chat Module
+
+### 🔹 Chat Management
+- `GET /chat/:userId` → Get 1-on-1 chat history
+- `GET /chat/group/:chatId` → Get group chat history
+- `POST /chat/group` → Create a new group
+
+> **Note**: Real-time messaging uses **Socket.IO**. Events: `send-message`, `new-message`, `writing-start`, `message-seen`, etc.
 
 ---
 
