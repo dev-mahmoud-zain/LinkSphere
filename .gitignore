@@ -2,3 +2,4 @@ dist/
 config/
 node_modules/
 FrontEnd/
+Socket.io Test/

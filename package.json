@@ -10,7 +10,7 @@
     "node": "22.18.0"
   },
   "keywords": [],
-  "author": "",
+  "author": "Mahmoud Zain",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
