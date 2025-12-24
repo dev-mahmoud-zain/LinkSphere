@@ -1,290 +1,226 @@
-# LinkSphere
+# 🌐 LinkSphere
 
-LinkSphere – A scalable backend social network platform inspired by Facebook. Features include user authentication, profile management, posts, nested comments, likes, real-time interactions via Socket.io, and admin controls. Built with Node.js, Express, MongoDB, and AWS S3 for media storage. Chat module and notifications are under development.
+LinkSphere is a high-performance, scalable backend for a modern social network platform. Designed for seamless connectivity, it features secure authentication, real-time messaging, content sharing, and advanced search capabilities.
 
 ---
 
 ## 📖 Project Overview
 
-LinkSphere is a backend social network platform that provides core features similar to Facebook.
-It enables users to register, authenticate, create posts, comment, and interact with each other in real time.
+LinkSphere provides a robust foundation for social interactions, enabling users to connect, share, and communicate in a secure environment.
 
-### ✨ Current Features
+### ✨ Core Features
 
-* 🔐 **Authentication & Authorization** – Secure user signup/login with JWT.
-* 👥 **User Management** – Profiles, roles (User, Admin, Super-Admin), and account freezee/unfreezee.
-* 📝 **Posts System** – Create, update, and manage posts with media & tags.
-* 💬 **Comments & Replies** – Nested comment system with likes/unlikes.
-* 📡 **Real-time Gateway** – Socket.io integration for live features.
-* 💌 **Email Notifications** – Nodemailer for account-related emails.
-* ☁️ **Cloud Storage** – AWS S3 integration for media files.
-* 💬 **Chat Module** – Real-time messaging (1-on-1 & Group) with socket.io.
-* 🔍 **Search Module** – Advanced search capabilities for users and content.
-
-
-### 🚧 Work in Progress
-
-* 👥 **Groups & Pages** – Planned future features.
-* 🔔 **Notifications** – Planned for post & comment interactions.
-* ⚙️ **User Settings & Privacy Controls** – Upcoming enhancements.
+*   🔐 **Secure Auth** – JWT-based login/signup with **Two-Step Verification (2FA)** and Gmail OAuth integration.
+*   👥 **User Profiles** – Full profile management, including profile/cover pictures (AWS S3) and bio updates.
+*   🤝 **Social Graph** – Sophisticated friend request system (send, accept, cancel, unfriend).
+*   📝 **Content Sharing** – Rich media posts with attachments, tags, and a nested comment/reply system.
+*   💬 **Real-time Chat** – 1-on-1 and Group messaging with typing indicators and delivery/seen status.
+*   🔍 **Power Search** – Advanced search for users and content across the platform.
+*   📡 **Live Interactions** – Real-time updates for likes, comments, and online status via Socket.io.
+*   🛡️ **Admin Suite** – Dedicated controls for account moderation, role management, and content freezing.
 
 
 ---
 
-## 🚀 Tech Stack
+## 🚀 Technical Stack
 
-**Core**
-
-* Node.js – Runtime environment
-* Express.js – Web framework
-* MongoDB + Mongoose – Database & ORM
-* JWT (jsonwebtoken) – Authentication & authorization
-
-**Security & Middleware**
-
-* Helmet – Secure HTTP headers
-* CORS – Cross-origin resource sharing
-* express-rate-limit – Rate limiting for APIs
-* bcryptjs – Password hashing
-
-**File Handling & Cloud**
-
-* Multer – File uploads
-* AWS SDK (S3) – Cloud storage integration
-
-**Utilities**
-
-* uuid – Unique IDs
-* zod – Data validation
-* dotenv – Environment configuration
-* nodemailer – Email sending
+| Category | Technologies |
+| :--- | :--- |
+| **Runtime** | Node.js (v20+) |
+| **Framework** | Express.js |
+| **Database** | MongoDB with Mongoose |
+| **Real-time** | Socket.io |
+| **Auth** | JWT / Passport (Google OAuth) / Bcrypt |
+| **Storage** | AWS S3 (via SDK v3) |
+| **Validation** | Zod |
+| **Utilities** | Nodemailer, Multer, Morgan, Helmet |
 
 ---
 
 ## 🏗 Project Structure
 
-```
+```text
 .
-├── config/               # Application configuration files
-├── dist/                 # Compiled JavaScript output (build)
-├── FrontEnd/             # Frontend implementation (if included)
-├── node_modules/         # Installed dependencies
+├── config/               # Environment-specific configuration
 ├── src/                  # Main source code
-│   ├── DataBase/         # Database connection and models
-│   ├── middlewares/      # Express middlewares (auth, validation, etc.)
-│   ├── modules/          # Feature-based modules
-│   │   ├── 001-auth/     # Authentication & authorization
-│   │   ├── 002-users/    # User management
-│   │   ├── 003-posts/    # Posts creation & management
-│   │   ├── 004-comments/ # Comments & replies system
-│   │   ├── 006-search/   # Search functionality
-│   │   ├── 007-gateway/  # Gateway (WebSocket / real-time features)
-│   │   └── 008-chat/     # Chat & messaging module
-
-│   ├── types/            # TypeScript type definitions
-│   ├── utils/            # Utility functions & helpers
-│   ├── app.controller.ts # Root controller / entry endpoints
-│   └── index.ts          # Application entry point
-├── .gitignore            # Git ignored files
-├── package-lock.json     # Lock file for npm dependencies
-├── package.json          # Project metadata and dependencies
-└── tsconfig.json         # TypeScript configuration
+│   ├── DataBase/         # Database connection, schemas, and repositories
+│   ├── middlewares/      # Auth, Validation, and Rate-limiting middlewares
+│   ├── modules/          # Feature-based architecture
+│   │   ├── 001-auth/     # Signup, 2FA, OTP, OAuth
+│   │   ├── 002-users/    # Profile & Friendship management
+│   │   ├── 003-posts/    # Feed and post CRUD
+│   │   ├── 004-comments/ # Nested interactions
+│   │   ├── 006-search/   # Discovery engine
+│   │   ├── 007-gateway/  # Socket.io core logic
+│   │   └── 008-chat/     # Private & Group messaging
+│   ├── utils/            # Shared helpers (S3, Email, Security)
+│   └── app.controller.ts # Main application bootstrap
+└── package.json          # Dependency management
 ```
 
 ---
 
-## ⚙️ Installation & Run
+## ⚙️ Setup & Installation
 
-Clone the repository and install dependencies:
+1.  **Clone & Install**
+    ```bash
+    git clone <repo_url>
+    cd LinkSphere
+    npm install
+    ```
 
-```bash
-git clone <repo_url>
-cd LinkSphere
-npm install
-```
+2.  **Environment Configuration**
+    Create `config/.env.development` (or production) with the following:
+    ```env
+    PORT=3000
+    DB_CONNECTION_URL=mongodb://...
+    ENCRYPTKEY=...
+    SALTROUND=10
+    
+    # Mailer
+    APP_EMAIL=...
+    APP_PASSWORD=...
+    
+    # JWT Signatures
+    ACCESS_USER_TOKEN_SIGNATURE=...
+    REFRESH_USER_TOKEN_SIGNATURE=...
+    
+    # AWS S3 Storage
+    S3_BUCKET_NAME=...
+    S3_ACCESS_KEY_Id=...
+    S3_SECRET_ACCESS_KEY=...
+    S3_REGION=...
+    
+    # OAuth
+    WEB_CLIENT_ID=...
+    ```
 
-Run the development server:
-
-```bash
-npm run start:dev
-```
-
----
-
-## 🔑 Environment Variables
-
-Create a `.env` file with the following variables:
-
-```
-MOOD
-PORT=3000
-APPLCATION_NAME="LinkSphere"
-DB_CONNECTION_URL
-ENCRYPTKEY
-SALTROUND
-APP_EMAIL
-APP_PASSWORD
-ACCESS_USER_TOKEN_SIGNATURE
-REFRESH_USER_TOKEN_SIGNATURE
-ACCESS_SYSTEM_TOKEN_SIGNATURE
-REFRESH_SYSTEM_TOKEN_SIGNATURE
-WEB_CLIENT_ID
-S3_BUCKET_NAME
-S3_ROOT_USER_NAME
-S3_ACCESS_KEY_Id
-S3_SECRET_K
-S3_REGION
-BASE_URL
-```
+3.  **Run Application**
+    ```bash
+    npm run start:dev
+    ```
 
 ---
 
-# 📌 API Documentation
+# 📌 API Reference
 
-## 🔑 Auth Module
+## 🔐 Authentication
+**Account & Verification**
+- `POST /auth/signup` – Register a new account.
+- `PATCH /auth/confirm-email` – Verify email via OTP.
+- `POST /auth/re-send-confirm-email-otp` – Resend verification OTP.
+- `POST /auth/signup-with-gmail` – OAuth signup/login.
 
+**Sessions & Security**
+- `POST /auth/login` – Login (Support 2FA).
+- `POST /auth/login/verify-otp-code` – Verify 2FA OTP.
+- `POST /auth/logout` – Terminate session.
+- `GET /auth/refresh-token` – Rotate JWT tokens.
 
-### 🔹 Account Registration & Email Verification
-- `POST /auth/signup` → Register a new account  
-- `PATCH /auth/confirm-email` → Confirm email using OTP  
-- `POST /auth/re-send-confirm-email-otp` → Resend OTP for email confirmation  
-- `POST /auth/signup-with-gmail` → Sign up / Log in using Gmail  
+**Password Reset**
+- `POST /auth/forget-password` – Request reset OTP.
+- `POST /auth/resend-forget-password-otp` – Resend reset OTP.
+- `POST /auth/change-forget-password` – Reset password with OTP.
 
----
-
-### 🔹 Login & Session Management
-- `POST /auth/login` → Log in with email & password  
-- `POST /auth/login/verify-otp-code` → Verify OTP if Two-Step Verification is enabled  
-- `POST /auth/logout` → Log out (from current device or all devices)  
-- `GET /auth/refresh-token` → Refresh Access & Refresh tokens  
-
----
-
-### 🔹 Password Reset (Forget Password Flow)
-- `POST /auth/forget-password` → Request OTP to reset password  
-- `POST /auth/resend-forget-password-otp` → Resend OTP (limited attempts)  
-- `POST /auth/change-forget-password` → Change password after verifying OTP  
-
----
-
-### 🔹 Two-Step Verification (2FA)
-- `PATCH /auth/change-two-setup-verification` → Enable/disable 2FA (OTP sent to email)  
-- `PATCH /auth/verify-enable-two-setup-verification` → Confirm enable/disable 2FA with OTP  
----
+**2FA Settings**
+- `PATCH /auth/change-two-setup-verification` – Toggle 2FA.
+- `PATCH /auth/verify-enable-two-setup-verification` – Confirm 2FA change.
 
 ## 👤 Users Module
+**Profile Management**
+- `GET /users/profile` – Current user profile.
+- `GET /users/user/:userId` – Get specific user profile.
+- `PATCH /users/profile-picture` – Update profile picture (AWS S3).
+- `PATCH /users/profile-cover` – Update cover image (AWS S3).
+- `DELETE /users/profile-picture` – Remove profile picture.
+- `DELETE /users/profile-cover-image` – Remove cover image.
 
-### 🔹 Profile Management
-- `GET /users/profile` → Get user profile  
-- `PATCH /users/profile-picture` → Upload/update profile picture  
-- `DELETE /users/profile-picture` → Delete profile picture  
-- `PATCH /users/profile-cover-images` → Upload/update cover images  
-- `DELETE /users/profile-cover-images` → Delete cover images  
+**Friendship System**
+- `GET /users/friends-list` – List all friends.
+- `POST /users/friend-request/:userId` – Send a request.
+- `PATCH /users/accept-friend-request/:requestId` – Accept request.
+- `DELETE /users/cancel-friend-request/:requestId` – Cancel/Reject request.
+- `DELETE /users/remove-friend/:userId` – Unfriend a user.
+- `GET /users/received-friend-requests/` – Incoming requests.
+- `GET /users/sent-friend-requests/` – Outgoing requests.
 
-### 🔹 Friendship Management
-- `POST /users/friend-request/:userId` → Send friend request  
-- `PATCH /users/accept-friend-request/:requestId` → Accept request  
-- `DELETE /users/cancel-friend-request/:requestId` → Cancel request  
-- `DELETE /users/remove-friend/:friendId` → Unfriend  
+**Account Settings**
+- `PATCH /users/update-basic-info` – Update bio, name, etc.
+- `PATCH /users/update-email` – Request email change.
+- `PATCH /users/confirm-update-email` – Confirm new email.
+- `PATCH /users/change-password` – Identity-safe password change.
 
-### 🔹 User Information Updates
-- `PATCH /users/update-basic-info` → Update basic info  
-- `PATCH /users/update-email` → Request email change (OTP sent)  
-- `PATCH /users/confirm-update-email` → Confirm email change  
-- `PATCH /users/change-password` → Change password  
-
-### 🔹 Account Control
-- `DELETE /users/freezee/:userId?` → freezee account  
-- `PATCH /users/un-freezee/me` → Unfreezee own account  
-
----
+**Admin & Moderation**
+- `DELETE /users/freeze/:userId` – Suspend an account (Admin/Author).
+- `PATCH /users/un-freeze/:userId/admin` – Admin unfreeze.
+- `PATCH /users/un-freeze/me` – Author self-unfreeze (via OTP).
+- `DELETE /users/delete/:userId` – Permanent account deletion.
+- `GET /users/change-role/:id` – Modify user permissions.
 
 ## 📝 Posts Module
+**Creation & Updates**
+- `POST /posts/create-post` – New post with media.
+- `PATCH /posts/update-content/:postId` – Update text.
+- `PATCH /posts/update-attachments/:postId` – Modify media files.
 
-### 🔹 Post Management
-- `POST /posts/create-post` → Create a new post with text, media, or both  
-- `PATCH /posts/update-post/{postId}` → Update an existing post’s content, media, or tags  
-- `DELETE /posts/{postId}` → Permanently delete a post  
+**Retrieval & Discovery**
+- `GET /posts/` – Global feed (Paginated).
+- `GET /posts/:postId` – Full post details.
+- `GET /posts/search` – Search content.
+- `GET /posts/me` – Current user's posts.
+- `GET /posts/user/:userId` – Other users' posts.
 
-### 🔹 Post Retrieval
-- `GET /posts/?page=1&limit=3` → Get a paginated list of posts  
-- `GET /posts/{postId}` → Get detailed info of a specific post  
-
-### 🔹 Post Actions
-- `POST /posts/like/{postId}` → Like or unlike a post  
-- `DELETE /posts/freezee/{postId}` → Temporarily hide a post  
-- `PATCH /posts/unfreezee/{postId}` → Re-enable a previously frozen post  
-
----
+**Interactions & Moderation**
+- `POST /posts/like/:postId` – Like/Unlike toggle.
+- `GET /posts/:postId/liked-users` – See who liked a post.
+- `GET /posts/freezed` – List suspended posts.
+- `DELETE /posts/freeze/:postId` – Suspend post visibility.
+- `PATCH /posts/unfreeze/:postId` – Restore suspended post.
+- `DELETE /posts/:postId` – Permanent deletion.
 
 ## 💬 Comments Module
+(Nested under `/posts/:postId`)
+- `POST /posts/:postId/create-comment` – New comment.
+- `GET /posts/:postId/comment/:commentId` – Specific comment info.
+- `GET /posts/:postId/comments/` – All comments for a post.
+- `GET /posts/:postId/:commentId/replies` – Get threaded replies.
+- `PATCH /posts/:postId/update/:commentId` – Edit comment.
+- `POST /posts/:postId/:commentId/create-reply` – Reply to a comment.
+- `POST /posts/:postId/:commentId/like` – Like/Unlike comment.
+- `GET /posts/:postId/:commentId/liked-users` – List comment likes.
+- `DELETE /posts/:postId/delete/:commentId` – Remove comment.
 
-### 🔹 Comment Management
-- `POST /posts/{postId}/comment` → Add a new comment to a post  
-- `POST /posts/{postId}/{commentId}/reply` → Reply to a specific comment or reply  
-- `PATCH /posts/{postId}/{commentId}` → Update an existing comment or reply  
-- `DELETE /posts/{postId}/{commentId}` → Permanently delete a comment or reply  
-
-### 🔹 Comment Retrieval
-- `GET /posts/{postId}/{commentId}` → Get detailed info of a specific comment or reply  
-
-### 🔹 Comment Actions
-- `POST /posts/{postId}/{commentId}/like` → Like or unlike a comment or reply  
-- `DELETE /posts/{postId}/{commentId}/freezee` → Temporarily hide a comment or reply  
-- `PATCH /posts/{postId}/{commentId}/unfreezee` → Re-enable a previously frozen comment or reply  
-
----
+## � Search Module
+- `GET /search/` – Unified search across the platform.
 
 ## 💬 Chat Module
-
-### 🔹 Chat Management
-- `GET /chat/:userId` → Get 1-on-1 chat history
-- `GET /chat/group/:chatId` → Get group chat history
-- `POST /chat/group` → Create a new group
-
-> **Note**: Real-time messaging uses **Socket.IO**. Events: `send-message`, `new-message`, `writing-start`, `message-seen`, etc.
+- `GET /chat/:userId` – Direct 1-on-1 history.
+- `GET /chat/group/:chatId` – Group chat history.
+- `POST /chat/group` – Create a new group.
 
 ---
 
-## 🛠 Admin Actions
+## 📡 Socket.IO Real-time Events
 
-- `PATCH /users/un-freezee/{userId}/admin` → Re-enable a previously frozen user account  
-- `DELETE /users/delete/{userId}` → Permanently delete a user account  
-- `PATCH /users/change-role/{userId}` → Change the role of a specific user  
-
----
-
-> 🔹 **Note:** All endpoints that require authentication should include the respective `Authorization` token header.  
-> 🔹 Optional parameters are denoted with `?` and arrays are indexed as `[0], [1], ...` when needed.
-
-
-
-## 🧪 Testing
-
-* API can be tested via **Postman**
-* documentation url : **https://documenter.getpostman.com/view/40056651/2sB3HqGdFW**
-
-
-## 📝 Contribution Guidelines
-
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature/YourFeature`)
-3. Commit your changes (`git commit -m 'Add some feature'`)
-4. Push to the branch (`git push origin feature/YourFeature`)
-5. Create a Pull Request
-
----
-
-## 📦 Dependencies Versions
-
-* Node.js: 20.x
-* Express.js: 4.x
-* MongoDB: 7.x
-* Mongoose: 7.x
-* Socket.io: 4.x
+| Event | Direction | Payload | Description |
+| :--- | :--- | :--- | :--- |
+| **`send-message`** | Emit | `{ content, sendTo }` | Send a DM or Group message. |
+| **`success-message`** | Listen | `{ content, messageId }` | Confirmation sent to the sender. |
+| **`new-message`** | Listen | `{ content, from, chatId }` | Received by message recipients. |
+| **`message-seen`** | Emit | `{ chatId, messageId }` | Mark a specific message as read. |
+| **`message-seen`** | Listen | `{ chatId, messageId, seenAt }` | Notifies participants when a message is seen. |
+| **`writing-start`** | Emit | `{ receiverId }` | Notify someone you are typing. |
+| **`writing-start`** | Listen | `{ senderId }` | Indicates a friend is typing. |
+| **`writing-stop`** | Emit | `{ receiverId }` | Notify you stopped typing. |
+| **`writing-stop`** | Listen | `{ senderId }` | Indicates a friend stopped typing. |
+| **`online-user`** | Listen | `userId` (string) | Broadcasted when a friend comes online. |
+| **`offline-user`** | Listen | `userId` (string) | Broadcasted when a friend goes offline. |
+| **`custom_error`** | Listen | `{ ...errorDetails }` | Error notifications from the server. |
 
 ---
 
 ## 👤 Author
+**Adhem Zen** – *Lead Developer*
+- GitHub: [Adhem Zayn](https://github.com/mahmoud-zain)
+- Project: [LinkSphere](https://github.com/mahmoud-zain/LinkSphere)
 
-**Adhem Zen** – Developer & Maintainer
