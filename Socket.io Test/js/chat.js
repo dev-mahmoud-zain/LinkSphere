@@ -1,438 +1,311 @@
-const baseURL = 'http://localhost:3000'
+const baseURL = 'http://localhost:3000';
 const token = `Bearer ${localStorage.getItem("token")}`;
 
-let globalProfile = {};
+if (!localStorage.getItem("token")) {
+    window.location.href = './index.html';
+}
 
 const headers = {
     'Content-Type': 'application/json; charset=UTF-8',
     'authorization': token
 };
 
+let globalProfile = {};
+let currentChatId = null; // To track active chat for "seen" and "typing"
+
 const clintIo = io(baseURL, {
     auth: { authorization: token }
-})
+});
+
+clintIo.on("connect", () => {
+    console.log("Connected to Socket.IO");
+});
 
 clintIo.on("connect_error", (err) => {
     console.log("Connection failed:", err.message);
-});
-
-clintIo.on("custom_error", (err) => {
-    console.log("custom_error:", err);
-});
-
-clintIo.on("like-post", data => {
-    console.log({ likeData: data });
-});
-
-
-clintIo.on("online-friend", data => {
-    console.log("online-friend",{ data });
-});
-
-clintIo.on("offline-friend", data => {
-    console.log("offline-friend",{ data });
-});
-
-
-
-clintIo.emit("message","Hello",(callBack)=>{
-console.log(callBack)
-})
-
-clintIo.on('message-seen', (data) => {
-   console.log("message seen done" , data)
-})
-
-
-
-
-
-// // clintIo.emit("sendMessage", { content: "FE need  profile", sendTo: "68c1bfd8f91ee1f635b7f799" })
-// clintIo.on("profile", (data) => {
-//     console.log(data);
-
-// })
-
-
-
-// clintIo.on("custom_connect_error", (err) => {
-//     console.log(err);
-
-//     console.log("Connection failed:", err.message);
-// });
-
-// clintIo.on("likePost", data => {
-//     console.log({ data });
-
-// })
-
-
-//images links
-let avatar = './avatar/Avatar-No-Background.png'
-let meImage = './avatar/Avatar-No-Background.png'
-let friendImage = './avatar/Avatar-No-Background.png'
-
-//save socket id
-// clintIo.emit("updateSocketId", { token })
-
-
-// collect messageInfo
-function sendMessage(sendTo, type) {
-    console.log({ sendTo, type });
-
-    if (type == "ovo") {
-
-        const data = {
-            content: $("#messageBody").val(),
-            sendTo,
-        }
-
-        clintIo.emit('send-message', data)
-
-    } else if (type == "group") {
-        const data = {
-            content: $("#messageBody").val(),
-            groupId: sendTo,
-        }
-        clintIo.emit('sendGroupMessage', data)
+    if (err.message === "jwt expired" || err.message === "Authentication Error") {
+        alert("Session expired. Please login again.");
+        window.location.href = "./index.html";
     }
+});
 
+// --- Sound ---
+const notifyAudio = new Audio('./sounds/notify.wav');
+
+// --- Emitters & Listeners ---
+
+// 1. Send Message
+function sendMessage(targetId, type) {
+    const input = document.getElementById("messageBody");
+    const content = input.value.trim();
+    if (!content) return;
+
+    if (type === "ovo") {
+        clintIo.emit('send-message', { content, sendTo: targetId });
+    } else if (type === "group") {
+        clintIo.emit('send-message', { content, sendTo: targetId }); // Backend handles both via same event now? No, let's check events. 
+        // Docs say: emit 'send-message' with sendTo = targetId (User or Group ID).
+    }
+    input.value = '';
 }
 
-// //sendCompleted
+// 2. Receive My Own Message (Success)
 clintIo.on('success-message', (data) => {
+    console.log("Message Sent:", data);
+    appendMessage(data.content, true, globalProfile?.picture?.url);
+});
 
-    const { content,messageId } = data
-
-    console.log({messageId})
-
-
-    const div = document.createElement('div');
-
-    div.className = 'me text-end p-2';
-    div.dir = 'rtl';
-    const imagePath = globalProfile.picture ? globalProfile.picture.url : avatar
-    div.innerHTML = `
-    <img class="chatImage" src="${imagePath}" alt="" srcset="">
-    <span class="mx-2">${content}</span>
-    `;
-    document.getElementById('messageList').appendChild(div);
-    $(".noResult").hide()
-    $("#messageBody").val('')
-})
-
-// // //receiveMessage
+// 3. Receive New Message
 clintIo.on("new-message", (data) => {
+    console.log("New Message:", data);
+    const { content, from, chatId, groupName } = data;
 
-    console.log({"newMessage": data });
+    // Is this message for the currently open chat?
+    // If DM: chatId should match currentChatId? Or check from._id?
+    // The backend sends 'chatId' in new-message. 
+    // We should check if currentChatId === chatId.
 
-    console.log("New Meessage")
+    if (currentChatId === chatId) {
+        // Active chat, append message
+        const img = from.picture ? from.picture.url : './avatar/Avatar-No-Background.png';
+        appendMessage(content, false, img);
 
-    const { content, from, groupId } = data
-
-    console.log({ from });
-
-    let imagePath = avatar;
-    if (from?.picture) {
-        imagePath = from.picture.url
-    }
-
-    const onclickAttr = document.getElementById("sendMessage").getAttribute("onclick")
-    const [base, currentOpenedChat] = onclickAttr?.match(/sendMessage\('([^']+)'/) || [];
-    console.log({ currentOpenedChat });
-    console.log({ onclickAttr, currentOpenedChat });
-
-    if ((!groupId && currentOpenedChat === from._id) || (groupId && currentOpenedChat === groupId)) {
-        const div = document.createElement('div');
-        div.className = 'myFriend p-2';
-        div.dir = 'ltr';
-        div.innerHTML = `
-    <img class="chatImage" src="${imagePath}" alt="" srcset="">
-    <span class="mx-2">${content}</span>
-    `;
-        document.getElementById('messageList').appendChild(div);
+        // Mark as seen immediately since we are looking at it
+        clintIo.emit("message-seen", { chatId, messageId: data.messageId });
     } else {
+        // Not active chat, show notification
+        notifyAudio.play().catch(e => console.error(e));
 
-        if (groupId) {
-            $(`#g_${groupId}`).show();
+        // Visual notification in list
+        if (groupName) {
+            $(`#g_${chatId}`).show(); // Show Green Dot for Group
         } else {
+            $(`#c_${from._id}`).show(); // Show Green Dot for User (using from._id might be tricky if list uses friend ID)
+            // Actually, if it's DM, the chatId is unique. But the list is composed of Friends.
+            // We need to find the friend div. 
             $(`#c_${from._id}`).show();
-
         }
-        const audio = document.getElementById("notifyTone");
-        audio.currentTime = 0; // restart from beginning
-        audio.play().catch(err => console.log("Audio play blocked:", err));
     }
-})
+});
 
-// // ******************************************************************** Show chat conversation
-function showData(sendTo, chat) {
-    document.getElementById("sendMessage").setAttribute("onclick", `sendMessage('${sendTo}' , "ovo")`);
+// 4. Typing Indicators
+let typingTimeout;
+function handleTyping() {
+    // Only for DMs for now based on backend support
+    // We need receiverId. 
+    // If we are in a group, backend typing support might be limited or broadcasted to group?
+    // The backend `startWriting` takes `receiverId`. It emits to receiver sockets.
+    // So good for DM.
 
-    document.getElementById('messageList').innerHTML = ''
-    if (chat.messages?.length) {
-        $(".noResult").hide()
-        for (const message of chat.messages) {
+    const sendBtn = document.getElementById("sendMessage");
+    const onclickAttr = sendBtn.getAttribute("onclick");
+    if (!onclickAttr) return;
 
-            if (message.createdBy.toString() == globalProfile._id.toString()) {
-                const div = document.createElement('div');
-                div.className = 'me text-end p-2';
-                div.dir = 'rtl';
-                div.innerHTML = `
-                <img class="chatImage" src="${meImage}" alt="" srcset="">
-                <span class="mx-2">${message.content}</span>
-                `;
-                document.getElementById('messageList').appendChild(div);
-            } else {
-                const div = document.createElement('div');
-                div.className = 'myFriend p-2';
-                div.dir = 'ltr';
-                div.innerHTML = `
-                <img class="chatImage" src="${friendImage}" alt="" srcset="">
-                <span class="mx-2">${message.content}</span>
-                `;
-                document.getElementById('messageList').appendChild(div);
-            }
+    // Extract target ID
+    const [_, targetId, type] = onclickAttr.match(/sendMessage\('([^']+)'\s*,\s*'([^']+)'\)/) || [];
 
-        }
-    } else {
-        const div = document.createElement('div');
+    if (type === 'ovo' && targetId) {
+        clintIo.emit('writing-start', { receiverId: targetId });
 
-        div.className = 'noResult text-center  p-2';
-        div.dir = 'ltr';
-        div.innerHTML = `
-        <span class="mx-2">Say Hi to start the conversation.</span>
-        `;
-        document.getElementById('messageList').appendChild(div);
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            clintIo.emit('writing-stop', { receiverId: targetId });
+        }, 1000);
     }
-
-    $(`#c_${sendTo}`).hide();
-
-
 }
 
-// //get chat conversation between 2 users and pass it to ShowData fun
-function displayChatUser(userId) {
+document.getElementById("messageBody").addEventListener("input", handleTyping);
 
-    axios({
-        method: 'get',
-        url: `${baseURL}/users/${userId}/chat?page=1&limit=5`,
-        headers,
-    }).then(function (response) {
-        const chat = response.data?.data.chat
+clintIo.on("writing-start", (data) => {
+    // data.senderId
+    const { senderId } = data;
+    // Show "typing..." near the user in the list OR in the header if open
+    const headerName = document.getElementById("chatHeaderName");
+    // Check if this user is currently open
+    // We don't store "currentOpenUserId", only "currentChatId". 
+    // Ideally we should match senderId to the open chat participants.
 
-        
-
-        if (chat) {
-
-            if (chat.participants[0]._id.toString() === globalProfile._id.toString()) {
-                meImage = chat.participants[0].picture ? chat.participants[0].picture.url : avatar
-                friendImage = chat.participants[1].picture? chat.participants[1].picture.url : avatar
-            } else {
-                friendImage = chat.participants[0].picture? chat.participants[0].picture.url : avatar
-                meImage = chat.participants[1].picture ? chat.participants[1].picture .url: avatar
-            }
-
-            showData(userId, chat)
-
-            
-        // ============= Seen =========
-
-
-        const messageId = chat.messages[chat.messages.length -1]._id;
-
-        clintIo.emit("message-seen",{
-            chatId:chat,
-            messageId
-        })
-
-
-        } else {
-            showData(userId, 0)
-        }
-
-    }).catch(function (error) {
-        console.log(error);
-        console.log({ status: error.status });
-        if (error.status == 404) {
-            showData(userId, 0)
-        } else {
-            alert("Ops something went wrong")
-        }
-
-    });
-}
-
-// // ********************************************************************
-// // ******************************************************************** Show  group chat conversation
-function showGroupData(sendTo, chat) {
-    document.getElementById("sendMessage").setAttribute("onclick", `sendMessage('${sendTo}' , "group")`);
-
-    document.getElementById('messageList').innerHTML = ''
-    if (chat.messages?.length) {
-        $(".noResult").hide()
-        console.log(chat.messages);
-
-        for (const message of chat.messages) {
-
-            if (message.createdBy?._id.toString() == globalProfile._id.toString()) {
-                const div = document.createElement('div');
-                div.className = 'me text-end p-2';
-                div.dir = 'rtl';
-                div.innerHTML = `
-                <img class="chatImage" src="${meImage}" alt="" srcset="">
-                <span class="mx-2">${message.content}</span>
-                `;
-                document.getElementById('messageList').appendChild(div);
-            } else {
-
-                const div = document.createElement('div');
-                div.className = 'myFriend p-2';
-                div.dir = 'ltr';
-                const friendImage = message.createdBy.profilePicture ? `${baseURL}/upload/${message.createdBy.profilePicture}` : avatar
-                div.innerHTML = `
-                <img class="chatImage" src="${friendImage}" alt="" srcset="">
-                <span class="mx-2">${message.content}</span>
-                `;
-                document.getElementById('messageList').appendChild(div);
-            }
-
-        }
-    } else {
-        const div = document.createElement('div');
-
-        div.className = 'noResult text-center  p-2';
-        div.dir = 'ltr';
-        div.innerHTML = `
-        <span class="mx-2">Say Hi to start the conversation.</span>
-        `;
-        document.getElementById('messageList').appendChild(div);
+    // Simple UI update:
+    if (document.querySelector(`.chatUser[data-id="${senderId}"]`)) {
+        // Maybe show a small "..." icon?
     }
-    $(`#g_${sendTo}`).hide();
+    console.log(`User ${senderId} is typing...`);
+});
 
+// --- UI Functions ---
 
+function appendMessage(content, isMe, imgSrc) {
+    const list = document.getElementById('messageList');
+    const div = document.createElement('div');
+    div.className = isMe ? 'me text-end p-2' : 'myFriend p-2';
+    div.dir = isMe ? 'rtl' : 'ltr';
+
+    const img = imgSrc || './avatar/Avatar-No-Background.png';
+
+    div.innerHTML = `
+        <img class="chatImage" src="${img}" alt="">
+        <span class="mx-2">${content}</span>
+    `;
+    list.appendChild(div);
+    list.scrollTop = list.scrollHeight;
+
+    // Remove "Say Hi" if present
+    $(".noResult").hide();
 }
-// // ********************************************************************
-function displayGroupChat(groupId) {
-    console.log({ groupId });
-    axios({
-        method: 'get',
-        url: `${baseURL}/chat/group/${groupId}`,
-        headers
-    }).then(function (response) {
-        const { chat } = response.data?.data
-        console.log({ chat });
-        if (chat) {
-            meImage = globalProfile.profilePicture ? `${baseURL}/upload/${globalProfile.profilePicture}` : avatar
-            showGroupData(groupId, chat)
-        } else {
-            showGroupData(groupId, 0)
-        }
-
-    }).catch(function (error) {
-        console.log(error);
-        console.log({ status: error.status });
-        if (error.status == 404) {
-            showGroupData(groupId, 0)
-        } else {
-            alert("Ops something went wrong")
-        }
-
-    });
-}
-// ==============================================================================================
 
 
-// ********************************************************* Show Users list 
-// Display Users
+// --- API Functions ---
+
+// 1. Get Profile & Friends
 function getUserData() {
     axios({
         method: 'get',
         url: `${baseURL}/users/profile`,
         headers
     }).then(function (response) {
-        console.log({ D: response.data });
-
-        const { user, groups } = response.data?.data;
-
-        console.log({ user });
-
+        const { user, groups } = response.data?.data || {};
         globalProfile = user;
 
-        // Default avatar
-        let imagePath = avatar;
+        document.getElementById("profileImage").src = user.picture?.url || './avatar/Avatar-No-Background.png';
+        document.getElementById("userName").innerText = user.userName;
 
-        // Set correct user picture
-        if (user.picture?.url) {
-            imagePath = user.picture.url;
-        }
-
-        document.getElementById("profileImage").src = imagePath;
-
-        // Username from API
-        document.getElementById("userName").innerHTML = user.userName;
-
-        // Friends list
         showUsersData(user.friends);
-
-        // Groups list
         showGroupList(groups);
+    }).catch(err => console.error(err));
+}
 
+function showUsersData(users = []) {
+    let html = ``;
+    users.forEach(u => {
+        const img = u.picture?.url || './avatar/Avatar-No-Background.png';
+        html += `
+        <div onclick="displayChatUser('${u._id}', '${u.userName}')" class="chatUser my-2" data-id="${u._id}" style="cursor:pointer">
+            <img class="chatImage" src="${img}">
+            <span class="ps-2">${u.userName}</span>
+            <span id="c_${u._id}" class="ps-2 closeSpan" style="display:none">🟢</span>
+        </div>`;
+    });
+    document.getElementById('chatUsers').innerHTML = html;
+}
+
+function showGroupList(groups = []) {
+    let html = ``;
+    groups.forEach(g => {
+        const img = g.group_image ? `${baseURL}/upload/${g.group_image}` : './avatar/Avatar-No-Background.png';
+        html += `
+        <div onclick="displayGroupChat('${g._id}', '${g.group}')" class="chatUser my-2" data-id="${g._id}" style="cursor:pointer">
+            <img class="chatImage" src="${img}">
+            <span class="ps-2">${g.group}</span>
+            <span id="g_${g._id}" class="ps-2 closeSpan" style="display:none">🟢</span>
+        </div>`;
+    });
+    document.getElementById('chatGrups').innerHTML = html;
+}
+
+// 2. Load 1-on-1 Chat
+function displayChatUser(userId, userName) {
+    currentChatId = null; // Reset first
+
+    // UI Update
+    document.getElementById('messageList').innerHTML = '<div class="text-center">Loading...</div>';
+    document.getElementById("sendMessage").setAttribute("onclick", `sendMessage('${userId}' , "ovo")`);
+    // Update Header (optional, usually implied by the list selection)
+
+    $(`#c_${userId}`).hide(); // Hide notification
+
+    axios({
+        method: 'get',
+        url: `${baseURL}/chat/${userId}?page=1&limit=50`, // Fixed Route
+        headers,
+    }).then(function (response) {
+        const chat = response.data?.data?.chat;
+        renderChatMessages(chat, globalProfile._id);
+
+        if (chat) {
+            currentChatId = chat._id;
+            // Mark last message seen
+            const lastMsg = chat.messages[chat.messages.length - 1];
+            if (lastMsg && !lastMsg.seen && lastMsg.createdBy !== globalProfile._id) {
+                clintIo.emit("message-seen", { chatId: chat._id, messageId: lastMsg._id });
+            }
+        }
     }).catch(function (error) {
-        console.log(error);
+        if (error.response?.status === 404) {
+            // No chat yet
+            renderChatMessages(null);
+        } else {
+            document.getElementById('messageList').innerHTML = '<div class="text-danger">Error loading chat</div>';
+        }
     });
 }
 
-// Show friends list
-function showUsersData(users = []) {
-    let cartonna = ``;
+// 3. Load Group Chat
+function displayGroupChat(groupId, groupName) {
+    currentChatId = null;
+    document.getElementById('messageList').innerHTML = '<div class="text-center">Loading...</div>';
+    document.getElementById("sendMessage").setAttribute("onclick", `sendMessage('${groupId}' , "group")`);
+    $(`#g_${groupId}`).hide();
 
-    for (let i = 0; i < users.length; i++) {
-        let imagePath = avatar;
+    axios({
+        method: 'get',
+        url: `${baseURL}/chat/group/${groupId}?page=1&limit=50`,
+        headers
+    }).then(function (response) {
+        const chat = response.data?.data?.chat;
+        renderChatMessages(chat, globalProfile._id);
+        if (chat) {
+            currentChatId = chat._id;
+            // Mark last message seen
+            const lastMsg = chat.messages[chat.messages.length - 1];
+            if (lastMsg && !lastMsg.seen && lastMsg.createdBy !== globalProfile._id) {
+                clintIo.emit("message-seen", { chatId: chat._id, messageId: lastMsg._id });
+            }
+        }
+    }).catch(function (error) {
+        document.getElementById('messageList').innerHTML = '<div class="text-danger">Error loading group chat</div>';
+    });
+}
 
-        // لو فيه صورة
-        if (users[i].picture?.url) {
-            imagePath = users[i].picture.url;
+function renderChatMessages(chat, myId) {
+    const list = document.getElementById('messageList');
+    list.innerHTML = '';
+
+    if (!chat || !chat.messages || chat.messages.length === 0) {
+        list.innerHTML = `<div class="noResult text-center p-2"><span class="mx-2">Say Hi to start conversation.</span></div>`;
+        return;
+    }
+
+    // Identify participants map for easy picture lookup
+    const participantMap = {};
+    if (chat.participants) {
+        chat.participants.forEach(p => participantMap[p._id] = p);
+    }
+
+    chat.messages.forEach(msg => {
+        const isMe = (msg.createdBy._id || msg.createdBy) === myId; // Handle populated vs unpopulated
+
+        let imgSrc = './avatar/Avatar-No-Background.png';
+        if (isMe) {
+            imgSrc = globalProfile.picture?.url || imgSrc;
+        } else {
+            // Try to find sender in participants
+            const senderId = msg.createdBy._id || msg.createdBy;
+            if (participantMap[senderId] && participantMap[senderId].picture) {
+                imgSrc = participantMap[senderId].picture.url;
+            }
         }
 
-        cartonna += `
-        <div onclick="displayChatUser('${users[i]._id}')" class="chatUser my-2">
-            <img class="chatImage" src="${imagePath}" alt="">
-            <span class="ps-2">${users[i].userName}</span>
-            <span id="c_${users[i]._id}" class="ps-2 closeSpan">
-                🟢
-            </span>
-        </div>
+        const div = document.createElement('div');
+        div.className = isMe ? 'me text-end p-2' : 'myFriend p-2';
+        div.dir = isMe ? 'rtl' : 'ltr';
+        div.innerHTML = `
+            <img class="chatImage" src="${imgSrc}">
+            <span class="mx-2" title="${new Date(msg.createdAt).toLocaleString()}">${msg.content}</span>
         `;
-    }
-
-    document.getElementById('chatUsers').innerHTML = cartonna;
+        list.appendChild(div);
+    });
+    list.scrollTop = list.scrollHeight;
 }
 
-// Show groups list
-function showGroupList(groups = []) {
-    let cartonna = ``
-    for (let i = 0; i < groups.length; i++) {
-        let imagePath = avatar;
-        if (groups[i].group_image) {
-            imagePath = `${baseURL}/upload/${groups[i].group_image}`
-        }
-        cartonna += `
-        <div onclick="displayGroupChat('${groups[i]._id}')" class="chatUser my-2">
-        <img class="chatImage" src="${imagePath}" alt="" srcset="">
-        <span class="ps-2">${groups[i].group}</span>
-           <span id="${"g_" + groups[i]._id}" class="ps-2 closeSpan">
-           🟢
-        </span>
-    </div>
-        
-        `
-        clintIo.emit("join_room", { roomId: groups[i].roomId })
-
-    }
-
-
-    document.getElementById('chatGrups').innerHTML = cartonna;
-}
-getUserData()
-// ********************************************************* Show Users list
+// Init
+getUserData();

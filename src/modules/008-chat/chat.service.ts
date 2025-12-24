@@ -1,11 +1,13 @@
 import { Request, Response } from "express";
-import { IMessageSeen, ISendMessage } from "./chat.dto";
+import { ICreateGroup, IMessageSeen, ISendMessage, ITyping } from "./chat.dto";
 import { ChatRepository, UserRepository } from "../../DataBase/repository";
 import { ChatModel, HChatDocument, UserModel } from "../../DataBase/models";
 import { Types } from "mongoose";
+import * as crypto from "crypto";
 import {
   BadRequestException,
   NotFoundException,
+  UnAuthorizedException,
 } from "../../utils/response/error.response";
 import { successResponse } from "../../utils/response/success.response";
 
@@ -13,7 +15,7 @@ export class ChatService {
   chatRepository = new ChatRepository(ChatModel);
   userRepository = new UserRepository(UserModel);
 
-  constructor() {}
+  constructor() { }
 
   // ===================  Get User Chat ===================
   getChat = async (req: Request, res: Response) => {
@@ -56,6 +58,88 @@ export class ChatService {
     });
   };
 
+  // ===================  Get Group Chat ===================
+
+  getGroupChat = async (req: Request, res: Response) => {
+    const { chatId } = req.params;
+    const { page, limit } = req.query as unknown as {
+      page: number;
+      limit: number;
+    };
+    const reqUserId = req.user?._id;
+
+    const chat = await this.chatRepository.findOneChat({
+      filter: {
+        _id: chatId,
+        participants: {
+          $in: [reqUserId],
+        },
+        groupName: { $exists: true },
+      },
+      options: {
+        populate: [
+          {
+            path: "participants",
+            select: "firstName lastName userName picture gender",
+          },
+        ],
+      },
+      page,
+      size: limit,
+    });
+
+    if (!chat) {
+      throw new NotFoundException("No Matched Group Chat");
+    }
+
+    return successResponse({
+      res,
+      data: {
+        chat: chat.chat,
+        p: chat.pagination,
+      },
+    });
+  };
+
+  // ===================  Create Group Chat ===================
+  createGroup = async (req: Request, res: Response) => {
+    const { name, participants } = req.body as ICreateGroup;
+    const createdBy = req.user?._id;
+    if (!createdBy) throw new UnAuthorizedException();
+
+    // Remove Duplicates & Add Creator
+    const uniqueParticipants = Array.from(new Set([...participants, createdBy.toString()]));
+
+    // Basic validation: Check minimum size
+    if (uniqueParticipants.length < 2) {
+      throw new BadRequestException("Group must have at least 2 members");
+    }
+
+
+    // Create Chat
+    const [chat] = await this.chatRepository.create({
+      data: [{
+        groupName: name,
+        participants: uniqueParticipants.map((id) => new Types.ObjectId(id)),
+        createdBy: new Types.ObjectId(createdBy.toString()),
+        roomId: crypto.randomUUID()
+      }]
+    }) || [];
+
+    if (!chat) {
+      throw new BadRequestException("Fail To Create Group");
+    }
+
+
+    return successResponse({
+      res,
+      statusCode: 201,
+      data: {
+        chat
+      }
+    })
+  }
+
   // ===================  Send A Message  ===================
 
   sendMessage = async ({
@@ -66,7 +150,55 @@ export class ChatService {
   }: ISendMessage) => {
     try {
       const createdBy = socket.credentials?.decoded._id as Types.ObjectId;
-      const sendTo = Types.ObjectId.createFromHexString(message.sendTo);
+      // Check if sendTo is a valid ChatId (Group) or UserId
+      const targetId = Types.ObjectId.createFromHexString(message.sendTo);
+
+      // Try to find a group chat first with this ID
+      const groupChat = await this.chatRepository.findOne({
+        filter: {
+          _id: targetId,
+          groupName: { $exists: true },
+          participants: { $in: [createdBy] }
+        }
+      });
+
+      if (groupChat) {
+        // ================= Handle Group Message =================
+        const chat = await this.chatRepository.findOneAndUpdate({
+          filter: {
+            _id: targetId,
+          },
+          updateData: {
+            $addToSet: {
+              messages: {
+                createdBy,
+                content: message.content,
+              },
+            },
+          },
+        });
+
+        const messageId = chat?.messages[chat?.messages.length - 1]?._id;
+
+        // Broadcast to all participants
+        chat?.participants.forEach(pId => {
+          const pSockets = connectedSockets.get(pId.toString());
+          if (pSockets && pSockets.size > 0) {
+            const event = pId.toString() === createdBy.toString() ? "success-message" : "new-message";
+            io.to([...pSockets]).emit(event, {
+              content: message.content,
+              from: socket.credentials?.user, // Only useful for receiver
+              messageId,
+              chatId: chat._id,
+              groupName: chat.groupName
+            });
+          }
+        });
+        return;
+      }
+
+      // ================= Handle DM (Existing Logic) =================
+      const sendTo = targetId;
 
       if (
         !(await this.userRepository.findOne({
@@ -130,9 +262,9 @@ export class ChatService {
           groupName: { $exists: false },
         },
       });
-      const messageId = lastChat.chat?.messages[lastChat.chat?.messages.length-1]?._id;
+      const messageId = lastChat.chat?.messages[lastChat.chat?.messages.length - 1]?._id;
 
-      
+
 
       const senderSockets = connectedSockets.get(createdBy.toString());
       const receiverSockets = connectedSockets.get(sendTo.toString());
@@ -182,6 +314,9 @@ export class ChatService {
             $in: [userId],
           },
         },
+        options: {
+          populate: "participants",
+        },
       });
 
       if (!chat) {
@@ -213,10 +348,73 @@ export class ChatService {
         seenAt: message.seenAt,
       });
 
+
+      // Notify other participants
+      chat.participants.forEach((participant: any) => {
+        const pId = participant._id.toString();
+        if (pId !== userId?.toString()) {
+          const pSockets = connectedSockets.get(pId);
+          if (pSockets && pSockets.size > 0) {
+            io.to([...pSockets]).emit("message-seen", {
+              chatId: data.chatId,
+              messageId: data.messageId,
+              seen: true,
+              seenAt: message.seenAt,
+              // user: { _id: userId } 
+            });
+          }
+        }
+      });
+
       chat.save();
     } catch (error) {
       console.error("message-seen error", error);
 
+      socket.emit("custom_error", error);
+    }
+  };
+
+
+  startWriting = ({
+    data,
+    socket,
+    io,
+    connectedSockets,
+  }: ITyping) => {
+    try {
+      const { receiverId } = data;
+      const senderId = socket.credentials?.decoded._id;
+
+      const receiverSockets = connectedSockets.get(receiverId);
+      if (receiverSockets && receiverSockets.size > 0) {
+        io.to([...receiverSockets]).emit("writing-start", {
+          senderId,
+        });
+      }
+    } catch (error) {
+      console.error("start-writing error", error);
+      socket.emit("custom_error", error);
+    }
+  };
+
+  stopWriting = ({
+    data,
+    socket,
+    io,
+    connectedSockets,
+  }: ITyping) => {
+    try {
+      const { receiverId } = data;
+      const senderId = socket.credentials?.decoded._id;
+
+      const receiverSockets = connectedSockets.get(receiverId);
+      if (receiverSockets && receiverSockets.size > 0) {
+        io.to([...receiverSockets]).emit("writing-stop", {
+          senderId,
+        });
+      }
+    } catch (error) {
+      console.error("stop-writing error", error);
       socket.emit("custom_error", error);
     }
   };

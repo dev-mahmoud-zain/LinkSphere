@@ -5,23 +5,21 @@ import { ChatService } from "./chat.service";
 export class ChatEvents {
   chatService = new ChatService();
 
-  constructor() {}
+  constructor() { }
 
-  sendMessage = (socket: IAuthSocket,io:Server,connectedSockets: Map<string, Set<string>>) => {
+  sendMessage = (socket: IAuthSocket, io: Server, connectedSockets: Map<string, Set<string>>) => {
     return socket.on("send-message", (message) => {
-
-      
       return this.chatService.sendMessage({
         socket,
         message,
         io,
         connectedSockets
       });
-      
+
     });
   };
 
-  messageSeen = (socket: IAuthSocket,io:Server,connectedSockets: Map<string, Set<string>>) => {
+  messageSeen = (socket: IAuthSocket, io: Server, connectedSockets: Map<string, Set<string>>) => {
 
     return socket.on("message-seen", (data) => {
 
@@ -32,7 +30,37 @@ export class ChatEvents {
         io,
         connectedSockets
       });
-      
+
+    });
+  };
+
+  startWriting = (socket: IAuthSocket, io: Server, connectedSockets: Map<string, Set<string>>) => {
+
+    return socket.on("writing-start", (data) => {
+
+
+      return this.chatService.startWriting({
+        socket,
+        data,
+        io,
+        connectedSockets
+      });
+
+    });
+  };
+
+  stopWriting = (socket: IAuthSocket, io: Server, connectedSockets: Map<string, Set<string>>) => {
+
+    return socket.on("writing-stop", (data) => {
+
+
+      return this.chatService.stopWriting({
+        socket,
+        data,
+        io,
+        connectedSockets
+      });
+
     });
   };
 

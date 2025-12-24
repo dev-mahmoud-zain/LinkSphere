@@ -5,7 +5,7 @@ import { ChatEvents } from "./chat.events";
 export class ChatGateWay {
   private chatEvents = new ChatEvents();
 
-  constructor() {}
+  constructor() { }
 
   register = (
     socket: IAuthSocket,
@@ -15,5 +15,7 @@ export class ChatGateWay {
     this.chatEvents.sendMessage(socket, io, connectedSockets);
 
     this.chatEvents.messageSeen(socket, io, connectedSockets);
+    this.chatEvents.startWriting(socket, io, connectedSockets);
+    this.chatEvents.stopWriting(socket, io, connectedSockets);
   };
 }

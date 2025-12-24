@@ -71,12 +71,15 @@ export const initializeIo = (httpServer: HttpServer) => {
   // ===========================
   // On Connection
   // ===========================
+
   getIo().on("connection", (socket: IAuthSocket) => {
+    
     const userId = socket.credentials?.decoded._id as string;
     
     // لو أول مرة user يدخل → اعمله Set جديدة
     if (!connectedSockets.has(userId)) {
       connectedSockets.set(userId, new Set());
+      getIo().emit("online-user", userId);
     }
 
     // ضيف socket الحالي للتابات المفتوحة

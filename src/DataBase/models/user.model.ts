@@ -240,14 +240,17 @@ userSchema.pre(
 
 userSchema.post("save", async function (next) {
   const that = this as HUserDocument & { wasNew: boolean; OTPCode?: string };
-  if (that.wasNew && that.OTPCode)
-
+  if (that.wasNew && that.OTPCode) {
     try {
-          emailEvent.emit("confirmEmail", { to: this.email, OTPCode: that.OTPCode });
+      emailEvent.emit("confirmEmail", {
+        to: this.email,
+        OTP_Code: that.OTPCode,
+      });
     } catch (error) {
-          throw new ApplicationException("Fail to send email");
+      throw new ApplicationException("Fail to send email");
     }
-  });
+  }
+});
 
 userSchema.pre(["updateOne", "findOne", "find"], function (next) {
   const query = this.getQuery();

@@ -16,6 +16,7 @@ import {
   usersRouter,
   searchRouter,
   initializeIo,
+  ChatRouter
 } from "./modules/";
 import {
   globalErrorHandler,
@@ -23,9 +24,9 @@ import {
 import connectToDataBase from "./DataBase/DB_Connection";
 
 // GQL
-import { createHandler } from "graphql-http/lib/use/express";
-import { GQLSchema } from "./modules/graphql";
-import { authenticationMiddleware } from "./middlewares/authentication.middleware";
+// import { createHandler } from "graphql-http/lib/use/express";
+// import { GQLSchema } from "./modules/graphql";
+// import { authenticationMiddleware } from "./middlewares/authentication.middleware";
 
 import morgan from "morgan";
 
@@ -64,14 +65,14 @@ export default async function bootstrap(): Promise<void> {
 
   // Application Routing
 
-  app.all(
-    "/graphql",
-    authenticationMiddleware(),
-    createHandler({
-      schema: GQLSchema,
-      context: (req) => ({ user: req.raw.user }),
-    })
-  );
+  // app.all(
+  //   "/graphql",
+  //   authenticationMiddleware(),
+  //   createHandler({
+  //     schema: GQLSchema,
+  //     context: (req) => ({ user: req.raw.user }),
+  //   })
+  // );
 
   // Main Router
   app.get("/", (req: Request, res: Response): Response => {
@@ -92,6 +93,7 @@ export default async function bootstrap(): Promise<void> {
   app.use("/posts", postsRouter);
 
   app.use("/search", searchRouter);
+  app.use("/chat", ChatRouter);
 
 
   app.use(globalErrorHandler);
@@ -106,13 +108,13 @@ export default async function bootstrap(): Promise<void> {
     });
   });
 
-   const httpServer = app.listen(port, () => {
+  const httpServer = app.listen(port, () => {
     console.log("===================================");
     console.log(`LinkSphere App Is Ruining Success on Port :: ${port}`);
     console.log("===================================");
   });
 
- // ============================== SOCKET IO ==============================
+  // ============================== SOCKET IO ==============================
 
 
   initializeIo(httpServer);
