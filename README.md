@@ -287,4 +287,4 @@ BASE_URL
 
 ## 👤 Author
 
-**Adhem Zen** – Developer & Maintainer
+**Mahmoud Zain** – Developer & Maintainer
