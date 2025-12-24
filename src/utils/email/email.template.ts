@@ -25,7 +25,7 @@ export const confirmEmailTemplate = async ({ OTPCode }: { OTPCode: string }): Pr
     <p style="font-size: 13px; color: #888; margin: 0;">
         Stay secure,<br>
         <strong style="color:#4a90e2;">LinkSphere Developer</strong><br>
-        <span style="font-size: 12px; color:#aaa;">Adham Zain</span>
+        <span style="font-size: 12px; color:#aaa;">Mahmoud Zain</span>
     </p>
 </div>
 
@@ -59,7 +59,7 @@ export const updateEmailTemplate = async ({ OTPCode }: { OTPCode: string }): Pro
     <p style="font-size: 13px; color: #888; margin: 0;">
         Stay secure,<br>
         <strong style="color:#4a90e2;">LinkSphere Developer</strong><br>
-        <span style="font-size: 12px; color:#aaa;">Adham Zain</span>
+        <span style="font-size: 12px; color:#aaa;">Mahmoud Zain</span>
     </p>
 </div>
   `;
@@ -93,7 +93,7 @@ export const forgetPasswordTemplate = async ({ OTPCode }: { OTPCode: string }): 
     <p style="font-size: 13px; color: #888; margin: 0;">
         Stay secure,<br>
         <strong style="color:#4a90e2;">LinkSphere Developer</strong><br>
-        <span style="font-size: 12px; color:#aaa;">Adham Zain</span>
+        <span style="font-size: 12px; color:#aaa;">Mahmoud Zain</span>
     </p>
 </div>
 
@@ -119,7 +119,7 @@ export const passwordChangedTemplate = async (): Promise<string> => {
     <p style="font-size: 13px; color: #888; margin: 0;">
         Stay secure,<br>
         <strong style="color:#4a90e2;">LinkSphere Developer</strong><br>
-        <span style="font-size: 12px; color:#aaa;">Adham Zain</span>
+        <span style="font-size: 12px; color:#aaa;">Mahmoud Zain</span>
     </p>
 </div>
   `;
@@ -151,7 +151,7 @@ export const enableTwoStepVerificationTemplate = async ({ OTPCode }: { OTPCode: 
     <p style="font-size: 13px; color: #888; margin: 0;">
         Stay secure,<br>
         <strong style="color:#4a90e2;">LinkSphere Developer</strong><br>
-        <span style="font-size: 12px; color:#aaa;">Adham Zain</span>
+        <span style="font-size: 12px; color:#aaa;">Mahmoud Zain</span>
     </p>
   </div>
   `;
@@ -183,7 +183,7 @@ export const disableTwoStepVerificationTemplate = async ({ OTPCode }: { OTPCode:
     <p style="font-size: 13px; color: #888; margin: 0;">
         Stay safe,<br>
         <strong style="color:#4a90e2;">LinkSphere Developer</strong><br>
-        <span style="font-size: 12px; color:#aaa;">Adham Zain</span>
+        <span style="font-size: 12px; color:#aaa;">Mahmoud Zain</span>
     </p>
   </div>
   `;
@@ -213,7 +213,7 @@ export const loginTwoStepVerificationTemplate = async ({ OTPCode }: { OTPCode: s
     <p style="font-size: 13px; color: #888; margin: 0;">
         Stay secure,<br>
         <strong style="color:#4a90e2;">LinkSphere Developer</strong><br>
-        <span style="font-size: 12px; color:#aaa;">Adham Zain</span>
+        <span style="font-size: 12px; color:#aaa;">Mahmoud Zain</span>
     </p>
   </div>
   `;
@@ -246,7 +246,7 @@ export const mentionNotificationTemplate = async (
     <p style="font-size: 13px; color: #888; margin: 0;">
         Thanks,<br>
         <strong style="color:#4a90e2;">LinkSphere</strong><br>
-        <span style="font-size: 12px; color:#aaa;">Developer: Adham Zain</span>
+        <span style="font-size: 12px; color:#aaa;">Developer: Mahmoud Zain</span>
     </p>
 </div>
   `;

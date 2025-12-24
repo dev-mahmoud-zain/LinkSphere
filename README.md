@@ -223,5 +223,3 @@ LinkSphere provides a robust foundation for social interactions, enabling users 
 **Adhem Zen** – *Lead Developer*
 - GitHub: [Adhem Zayn](https://github.com/mahmoud-zain)
 - Project: [LinkSphere](https://github.com/mahmoud-zain/LinkSphere)
-
-**Adhem Zen** – Developer & Maintainer

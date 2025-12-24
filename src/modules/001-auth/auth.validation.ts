@@ -1,4 +1,4 @@
-import {  z } from "zod";
+import { z } from "zod";
 import { generalFields } from "../../middlewares/validation.middleware";
 import { GenderEnum } from "../../DataBase/models/user.model";
 import { LogoutFlagEnum, TokenTypeEnum } from "../../utils/security/token.security";
@@ -30,7 +30,7 @@ export const signup = {
             ctx.addIssue({
                 code: "custom",
                 path: ["userName"],
-                message: "User Name Must Include First And Last Name Example:[Adham Zain]"
+                message: "User Name Must Include First And Last Name Example:[Mahmoud Zain]"
             })
         }
     })
@@ -65,7 +65,7 @@ export const logout = {
 export const signupWithGmail = {
     body: z.object({
         idToken: z.string(),
-        userName:generalFields.userName
+        userName: generalFields.userName
     })
 }
 
